@@ -1,0 +1,28 @@
+name: Format and test Python code
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - '**/*.py'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade uv
+          uv sync --group lint --group test
+      - name: Run pre-commit
+        run: |
+          uv run pre-commit run --all-files
+      - name: Test with pytest
+        run: |
+          uv run pytest

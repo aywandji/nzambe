@@ -1,0 +1,18 @@
+# Production environment configuration
+# Overrides base.yaml settings for production deployment
+
+# Example: Use larger models and batch sizes for production
+llm:
+  # model_name: "llama3.1:8b"  # Uncomment to use larger model in prod
+  embed_batch_size: 20
+
+index:
+  insert_batch_size: 4096
+
+query_engine:
+  similarity_top_k: 3
+  similarity_cutoff: 0.7  # Enable similarity filtering in production
+
+# Production data paths
+# data:
+#   folder_path: "/var/lib/nzambe/data/bible"

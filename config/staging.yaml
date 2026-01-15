@@ -1,0 +1,16 @@
+# Staging environment configuration
+# Overrides base.yaml settings for staging deployment
+
+# Example: Use smaller batch sizes for resource-constrained staging environment
+llm:
+  embed_batch_size: 5
+
+index:
+  insert_batch_size: 1024
+
+query_engine:
+  similarity_top_k: 2
+
+# Add staging-specific data paths if needed
+# data:
+#   folder_path: "/opt/nzambe/data/bible"
