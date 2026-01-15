@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="b7939b8f-3348-448e-ae9d-f55ca58a5797" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/nzambe.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tests/data/qa_dataset.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nzambe/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nzambe/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/nzambe/helpers/eval.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/nzambe/helpers/eval.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/helpers/test_eval.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/helpers/test_eval.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="34" />
+    <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Jupyter Notebook" />
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/.venv/lib/python3.11/site-packages/llama_index/core/indices/base.py" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/.venv/lib/python3.11/site-packages/llama_index/core/ingestion/pipeline.py" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="AISelfReview" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
+  <component name="ProjectId" id="36AAybZln1u3tVwd7vyIXsgyDVA" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python tests.Python tests for helpers.test_data_processing.TestBuildDocumentsIndex.executor": "Run",
+    "Python tests.Python tests for helpers.test_data_processing.TestBuildDocumentsIndex.test_build_documents_index_creates_new_index.executor": "Debug",
+    "Python tests.Python tests for helpers.test_data_processing.TestBuildDocumentsIndex.test_build_documents_index_loads_from_disk.executor": "Run",
+    "Python tests.Python tests for helpers.test_data_processing.TestBuildDocumentsIndex.test_build_documents_index_requires_tokenizer.executor": "Run",
+    "Python tests.Python tests for helpers.test_data_processing.TestBuildDocumentsIndex.test_build_documents_index_unsupported_embed_model.executor": "Run",
+    "Python tests.Python tests for helpers.test_data_processing.TestBuildDocumentsIndex.test_build_documents_index_with_input_files.executor": "Run",
+    "Python tests.Python tests for helpers.test_data_processing.TestBuildDocumentsIndex.test_build_documents_index_with_multiprocessing.executor": "Run",
+    "Python tests.Python tests for helpers.test_data_processing.TestExtractBookText.executor": "Run",
+    "Python tests.Python tests for helpers.test_data_processing.TestExtractBookText.test_extract_book_text_basic.executor": "Debug",
+    "Python tests.Python tests for helpers.test_data_processing.TestExtractBookText.test_extract_book_text_removes_asterisks.executor": "Run",
+    "Python tests.Python tests for helpers.test_data_processing.TestExtractBookVerses.executor": "Run",
+    "Python tests.Python tests for helpers.test_data_processing.TestExtractTestamentBooksNames.executor": "Run",
+    "Python tests.Python tests for helpers.test_data_processing.TestFromDocumentsToNodes.executor": "Run",
+    "Python tests.Python tests for helpers.test_data_processing.TestFromDocumentsToNodes.test_from_documents_to_nodes_async_mode.executor": "Debug",
+    "Python tests.Python tests for helpers.test_data_processing.TestFromDocumentsToNodes.test_from_documents_to_nodes_custom_parameters.executor": "Run",
+    "Python tests.Python tests for helpers.test_data_processing.TestSplitBibleTextByBooks.executor": "Run",
+    "Python tests.Python tests for helpers.test_data_processing.TestSplitBibleTextByBooks.test_split_bible_uses_alternative_book_names.executor": "Debug",
+    "Python tests.Python tests for test_client.TestHealthCheck.executor": "Run",
+    "Python tests.Python tests for test_client.TestHealthCheck.test_health_check_success.executor": "Run",
+    "Python tests.Python tests for test_client.TestQueryServer.executor": "Run",
+    "Python tests.Python tests in test_data_processing.py.executor": "Run",
+    "Python tests.Python tests in tests.executor": "Run",
+    "Python tests.pytest for helpers.test_eval.TestGenerateNewQuestionsFromIndex.test_generate_new_questions_no_candidate_nodes.executor": "Run",
+    "Python tests.pytest for helpers.test_eval.TestGenerateNewQuestionsFromIndex.test_generate_new_questions_with_existing_dataset.executor": "Debug",
+    "Python tests.pytest for helpers.test_eval.TestRunNightlyBenchmark.test_run_nightly_benchmark_skips_traces_without_observations.executor": "Debug",
+    "Python tests.pytest in test_eval.py.executor": "Run",
+    "Python tests.pytest in tests.executor": "Run",
+    "Python.benchmark_rag.executor": "Run",
+    "Python.bulk_queries.executor": "Run",
+    "Python.example.executor": "Run",
+    "Python.generate_questions_from_documents.executor": "Run",
+    "Python.main.executor": "Run",
+    "Python.nightly_eval.executor": "Run",
+    "Python.python -m nzambe.client --health.executor": "Run",
+    "Python.python -m nzambe.client --question \"give me in order what was created at the beginning\".executor": "Run",
+    "Python.test_client.executor": "Run",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "ai.playground.ignore.import.keys.banner.in.settings": "true",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "baseline-version",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "/home/arnaud/projects/nzambe",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "watcher.settings",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecapSpentCounter">
+    <option name="endsOfQuotaMs" value="1769688043059" />
+    <option name="spentUsd" value="0.08844254" />
+  </component>
+  <component name="RecapUselessUpdatesCounter">
+    <option name="suspendCountdown" value="0" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/.debug" />
+      <recent name="$PROJECT_DIR$/tests/helpers" />
+      <recent name="$PROJECT_DIR$/src/nzambe/helpers" />
+      <recent name="$PROJECT_DIR$/src/nzambe" />
+      <recent name="$PROJECT_DIR$/src/nzambe/server" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python tests.pytest in test_eval.py">
+    <configuration name="Python tests in test_data_processing.py" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="nzambe" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/tests/helpers/test_data_processing.py&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="pytest for helpers.test_eval.TestGenerateNewQuestionsFromIndex.test_generate_new_questions_with_existing_dataset" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="nzambe" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;helpers.test_eval.TestGenerateNewQuestionsFromIndex.test_generate_new_questions_with_existing_dataset&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="pytest for helpers.test_eval.TestRunNightlyBenchmark.test_run_nightly_benchmark_skips_traces_without_observations" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="nzambe" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;helpers.test_eval.TestRunNightlyBenchmark.test_run_nightly_benchmark_skips_traces_without_observations&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="pytest in test_eval.py" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="nzambe" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/tests/helpers/test_eval.py&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="pytest in tests" type="tests" factoryName="py.test" temporary="true" nameIsGenerated="true">
+      <module name="nzambe" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/tests" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="" />
+      <option name="_new_keywords" value="&quot;&quot;" />
+      <option name="_new_parameters" value="&quot;&quot;" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/tests&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python tests.pytest in test_eval.py" />
+        <item itemvalue="Python tests.pytest for helpers.test_eval.TestGenerateNewQuestionsFromIndex.test_generate_new_questions_with_existing_dataset" />
+        <item itemvalue="Python tests.pytest for helpers.test_eval.TestRunNightlyBenchmark.test_run_nightly_benchmark_skips_traces_without_observations" />
+        <item itemvalue="Python tests.pytest in tests" />
+        <item itemvalue="Python tests.Python tests in test_data_processing.py" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-PY-253.29346.308" />
+        <option value="bundled-python-sdk-ca5e2b39c7df-6e1f45a539f7-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-253.29346.308" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="b7939b8f-3348-448e-ae9d-f55ca58a5797" name="Changes" comment="" />
+      <created>1764439258019</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1764439258019</updated>
+      <workItem from="1764439259151" duration="4411000" />
+      <workItem from="1764709630011" duration="387000" />
+      <workItem from="1764710047593" duration="6472000" />
+      <workItem from="1765530823456" duration="11915000" />
+      <workItem from="1765554620796" duration="14741000" />
+      <workItem from="1765622566992" duration="17519000" />
+      <workItem from="1765730571251" duration="13659000" />
+      <workItem from="1765802397013" duration="22055000" />
+      <workItem from="1765997913790" duration="3715000" />
+      <workItem from="1767704631618" duration="25343000" />
+      <workItem from="1767861754079" duration="18353000" />
+      <workItem from="1768056334318" duration="14022000" />
+      <workItem from="1768322885134" duration="1384000" />
+      <workItem from="1768387909579" duration="26695000" />
+      <workItem from="1768514333102" duration="1198000" />
+      <workItem from="1768515611321" duration="8497000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/.venv/lib/python3.11/site-packages/llama_index/core/indices/base.py</url>
+          <line>110</line>
+          <option name="timeStamp" value="34" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/nzambe/helpers/eval.py</url>
+          <line>118</line>
+          <option name="timeStamp" value="51" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/nzambe/helpers/eval.py</url>
+          <line>119</line>
+          <option name="timeStamp" value="54" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/nzambe$pytest_in_tests.coverage" NAME="pytest in tests Coverage Results" MODIFIED="1768517969250" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/nzambe$pytest_for_helpers_test_eval_TestGenerateNewQuestionsFromIndex_test_generate_new_questions_with_existing_dataset.coverage" NAME="pytest for helpers.test_eval.TestGenerateNewQuestionsFromIndex.test_generate_new_questions_with_existing_dataset Coverage Results" MODIFIED="1768523917722" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/nzambe$python__m_nzambe_client___question__give_me_in_order_what_was_created_at_the_beginning_.coverage" NAME="python -m nzambe.client --question &quot;give me in order what was created at the beginning&quot; Coverage Results" MODIFIED="1765804764931" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/nzambe$pytest_in_test_eval_py.coverage" NAME="pytest in test_eval.py Coverage Results" MODIFIED="1768523944495" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/nzambe$pytest_for_helpers_test_eval_TestGenerateNewQuestionsFromIndex_test_generate_new_questions_no_candidate_nodes.coverage" NAME="pytest for helpers.test_eval.TestGenerateNewQuestionsFromIndex.test_generate_new_questions_no_candidate_nodes Coverage Results" MODIFIED="1768524179090" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/nzambe$pytest_for_helpers_test_eval_TestRunNightlyBenchmark_test_run_nightly_benchmark_skips_traces_without_observations.coverage" NAME="pytest for helpers.test_eval.TestRunNightlyBenchmark.test_run_nightly_benchmark_skips_traces_without_observations Coverage Results" MODIFIED="1768521208720" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/nzambe$bulk_queries.coverage" NAME="bulk_queries Coverage Results" MODIFIED="1765806407026" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nzambe" />
+    <SUITE FILE_PATH="coverage/nzambe$python__m_nzambe_client___health.coverage" NAME="python -m nzambe.client --health Coverage Results" MODIFIED="1765804787514" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/nzambe$generate_questions_from_documents.coverage" NAME="generate_questions_from_documents Coverage Results" MODIFIED="1765739325406" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nzambe" />
+    <SUITE FILE_PATH="coverage/nzambe$benchmark_rag.coverage" NAME="benchmark_rag Coverage Results" MODIFIED="1765544752333" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nzambe" />
+    <SUITE FILE_PATH="coverage/nzambe$nightly_eval.coverage" NAME="nightly_eval Coverage Results" MODIFIED="1767718395753" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nzambe" />
+    <SUITE FILE_PATH="coverage/nzambe$.coverage" NAME=" Coverage Results" MODIFIED="1768510198573" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+    <SUITE FILE_PATH="coverage/nzambe$main.coverage" NAME="main Coverage Results" MODIFIED="1765635964252" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nzambe" />
+    <SUITE FILE_PATH="coverage/nzambe$example.coverage" NAME="example Coverage Results" MODIFIED="1764447312611" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/nzambe" />
+    <SUITE FILE_PATH="coverage/nzambe$test_client.coverage" NAME="test_client Coverage Results" MODIFIED="1768388175193" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+  </component>
+</project>
