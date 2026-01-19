@@ -1,6 +1,6 @@
 [project]
 name = "nzambe"
-dynamic = ["version"]
+version = "0.0.0" # the real dynamic version will be defined inside the src/__version.py file
 description = "Application for Q&A on holy books"
 readme = "README.md"
 authors = [
@@ -28,14 +28,8 @@ dependencies = [
 nzambe = "nzambe.cli:cli"
 
 [build-system]
-requires = ["hatchling", "hatch-vcs"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.hatch.version]
-source = "vcs"
-
-[tool.hatch.build.hooks.vcs]
-version-file = "src/nzambe/_version.py"
 
 [dependency-groups]
 dev = [

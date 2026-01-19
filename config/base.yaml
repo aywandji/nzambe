@@ -52,7 +52,7 @@ query_engine:
     Refined Answer:
 
 data:
-  folder_path: ".debug/data/bible"
+  folder_path: "/app/data/bible"
   books_subfolder: "books"
 
 eval:

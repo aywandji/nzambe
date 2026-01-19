@@ -220,26 +220,14 @@ async def build_documents_index(
             exclude_hidden=False,
         ).load_data()
 
-        if num_workers is None:
-            # build nodes (with embeddings) in a single process but with concurrency
-            nodes = await from_documents_to_nodes(
-                documents,
-                model_tokenizer,
-                chunk_size=document_split_chunk_size,
-                chunk_overlap=document_split_chunk_overlap,
-                paragraph_separator=paragraph_separator,
-            )
-        else:
-            # build nodes (without embeddings) using multiprocessing
-            nodes = await from_documents_to_nodes(
-                documents,
-                model_tokenizer,
-                chunk_size=document_split_chunk_size,
-                chunk_overlap=document_split_chunk_overlap,
-                paragraph_separator=paragraph_separator,
-                num_workers=num_workers,
-            )
-
+        nodes = await from_documents_to_nodes(
+            documents,
+            model_tokenizer,
+            chunk_size=document_split_chunk_size,
+            chunk_overlap=document_split_chunk_overlap,
+            paragraph_separator=paragraph_separator,
+            num_workers=num_workers,
+        )
         index = VectorStoreIndex(
             nodes=nodes,
             insert_batch_size=insert_batch_size,

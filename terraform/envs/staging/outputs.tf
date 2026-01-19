@@ -1,0 +1,43 @@
+output "vpc_id" {
+  description = "VPC ID"
+  value       = module.vpc.vpc_id
+}
+
+output "alb_dns_name" {
+  description = "DNS name of the Application Load Balancer"
+  value       = module.alb.alb_dns_name
+}
+
+output "alb_url" {
+  description = "URL of the Application Load Balancer"
+  value       = "http://${module.alb.alb_dns_name}"
+}
+
+output "ecs_cluster_name" {
+  description = "ECS Cluster name"
+  value       = module.ecs.cluster_name
+}
+
+output "ecs_service_name" {
+  description = "ECS Service name"
+  value       = module.ecs.service_name
+}
+
+output "ecr_repository_url" {
+  description = "ECR Repository URL"
+  value       = data.aws_ecr_repository.app.repository_url
+}
+
+output "cloudwatch_log_group" {
+  description = "CloudWatch Log Group name"
+  value       = module.ecs.log_group_name
+}
+
+output "secrets_arns" {
+  description = "ARNs of the secrets"
+  value = {
+    langfuse_secret_key = aws_secretsmanager_secret.langfuse_secret_key.arn
+    langfuse_public_key = aws_secretsmanager_secret.langfuse_public_key.arn
+    langfuse_base_url   = aws_secretsmanager_secret.langfuse_base_url.arn
+  }
+}
