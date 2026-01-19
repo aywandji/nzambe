@@ -1,0 +1,52 @@
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments and package manager
+.venv/
+venv/
+ENV/
+env/
+
+# Version control
+.git/
+.gitignore
+
+# IDE and editor configurations
+.idea/
+.vscode/
+
+# Testing and cache
+.pytest_cache/
+.ruff_cache/
+tests/
+
+# Development and debugging
+.debug/
+notebooks/
+*.ipynb
+
+# CI/CD
+.github/
+
+# Documentation and examples
+example.env
+
+# Environment files
+.env
+.env.*
+
+# Pre-commit hooks
+.pre-commit-config.yaml
+
+# Python version specification
+.python-version
+
+# Keep essential files for Docker build
+!pyproject.toml
+!uv.lock
+!src/
+!config/
+!Readme.md # hatchling needs it during uv sync

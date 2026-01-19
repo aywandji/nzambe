@@ -71,9 +71,9 @@ class DataConfig(BaseModel):
         """Resolve relative paths to absolute paths."""
         path = Path(v)
         if not path.is_absolute():
-            # Resolve relative to project root (3 levels up from this file)
-            project_root = Path(__file__).parents[2]
-            path = project_root / v
+            # Resolve relative to the current working directory (where the app is run from)
+            # This works for Docker (WORKDIR /app) and local dev (running from root)
+            path = Path.cwd() / v
         return str(path)
 
 
@@ -116,9 +116,15 @@ class Settings(BaseSettings):
         """
         Load configuration from YAML files and merge with environment variables.
         """
-        # Determine the config directory (relative to the project root)
-        project_root = Path(__file__).parents[2]
-        config_dir = project_root / "config"
+        # Look for config in CWD or explicit Env Var
+        # 1. Check for explicit env var
+        config_dir_env = os.getenv("NZAMBE_CONFIG_DIR")
+        if config_dir_env:
+            config_dir = Path(config_dir_env)
+        else:
+            # 2. Fallback to the 'config' folder in the current working directory
+            # In Docker, WORKDIR is /app, so this resolves to /app/config
+            config_dir = Path.cwd() / "config"
 
         # Load base configuration
         base_config_path = config_dir / "base.yaml"
