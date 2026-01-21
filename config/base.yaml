@@ -3,7 +3,6 @@
 
 llm:
   model_name: "gemma3:1b-it-qat"
-  embedding_model_name: "BAAI/bge-small-en-v1.5"
   context_window: 4096
   request_timeout: 360.0
   embed_batch_size: 10
@@ -56,11 +55,6 @@ data:
   books_subfolder: "books"
 
 eval:
-  ollama_model: "gemma3:1b-it-qat"
-  ollama_base_url: "http://localhost:11434"
-  embeddings_provider: "huggingface"
-  embeddings_model: "BAAI/bge-small-en-v1.5"
-
   qa_generate_prompt: |
     {{default_qa_generate_prompt}} Make sure the question(s) don't give a clue about the context as the student will have to find the right context in the whole book before answering the question(s). Return only the question(s), one after the other.For eg.: question_text_1
      question_text_2

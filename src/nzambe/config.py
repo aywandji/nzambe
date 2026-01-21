@@ -13,6 +13,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from dotenv import load_dotenv
 
+
 # Load .env file if it exists (primarily for local development)
 load_dotenv()
 
@@ -28,11 +29,22 @@ class LangfuseConfig(BaseModel):
     )
 
 
+class EmbeddingModel(BaseModel):
+    """Embedding model configuration."""
+
+    name: str
+    platform: str
+    tokenizer: str
+
+    def __str__(self):
+        return f"{self.platform}--{self.name}--{self.tokenizer}"
+
+
 class LLMConfig(BaseModel):
     """LLM and embedding model configuration."""
 
     model_name: str = "gemma3:1b-it-qat"
-    embedding_model_name: str = "BAAI/bge-small-en-v1.5"
+    embedding_model: EmbeddingModel
     context_window: int = 4096
     request_timeout: float = 360.0
     embed_batch_size: int = 10
@@ -82,12 +94,11 @@ class EvalConfig(BaseModel):
 
     ollama_model: str = "gemma3:1b-it-qat"
     ollama_base_url: str = "http://localhost:11434"
-    embeddings_provider: str = "huggingface"
-    embeddings_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_model: EmbeddingModel
     qa_generate_prompt: str
 
 
-class Settings(BaseSettings):
+class NzambeSettings(BaseSettings):
     """
     Root settings class for Nzambe RAG server.
     Loads configuration from YAML files based on the environment.
@@ -169,7 +180,7 @@ class Settings(BaseSettings):
                 and isinstance(result[key], dict)
                 and isinstance(value, dict)
             ):
-                result[key] = Settings._deep_merge(result[key], value)
+                result[key] = NzambeSettings._deep_merge(result[key], value)
             else:
                 result[key] = value
         return result
@@ -177,4 +188,4 @@ class Settings(BaseSettings):
 
 # Global settings instance
 # Import this instance throughout the application
-nzambe_settings = Settings()
+nzambe_settings = NzambeSettings()

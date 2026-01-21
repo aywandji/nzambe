@@ -1,0 +1,25 @@
+name: terraform-ci.yml
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - 'terraform/**/*.tf'
+
+jobs:
+  terraform-fmt:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -diff -recursive terraform/
+
+      - name: Terraform validate global configuration
+        run: |
+          cd terraform/global
+          terraform init  -backend=false
+          terraform validate

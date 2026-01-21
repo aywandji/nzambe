@@ -6,13 +6,14 @@ import random
 
 from datasets import Dataset
 from langchain_ollama import ChatOllama
-from llama_index.core import load_index_from_storage, StorageContext
+from llama_index.core import load_index_from_storage, StorageContext, Settings
 from llama_index.core.evaluation import generate_question_context_pairs
 from llama_index.core.llama_dataset.legacy.embedding import (
     EmbeddingQAFinetuneDataset,
     DEFAULT_QA_GENERATE_PROMPT_TMPL,
 )
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.embeddings.ollama import OllamaEmbedding
+
 from ragas import evaluate
 from ragas.embeddings.base import embedding_factory
 from ragas.metrics import answer_relevancy, faithfulness
@@ -101,7 +102,8 @@ def run_nightly_benchmark(last_n_hours: int, num_traces_limit: int = 1):
         base_url=nzambe_settings.eval.ollama_base_url,
     )
     embeddings_model = embedding_factory(
-        nzambe_settings.eval.embeddings_provider, nzambe_settings.eval.embeddings_model
+        nzambe_settings.eval.embedding_model.platform,
+        nzambe_settings.eval.embedding_model.name,
     )
 
     ragas_metrics = [faithfulness, answer_relevancy]
@@ -135,15 +137,16 @@ def generate_new_questions_from_index(
     random_seed: int,
     questions_dataset_path: str | None = None,
 ):
-    # --- 1. Load the Saved Model ID ---
     try:
         with open(os.path.join(index_storage_dir, "nzambe_metadata.json"), "r") as f:
             metadata = json.load(f)
         platform = metadata["platform"]
-        if platform == "huggingface":
+        if nzambe_settings.env in ("local", "test") and platform == "ollama":
+            Settings.embed_model = OllamaEmbedding(
+                model_name=metadata["embed_model_name"]
+            )
             index = load_index_from_storage(
                 StorageContext.from_defaults(persist_dir=index_storage_dir),
-                embed_model=HuggingFaceEmbedding(model_name=metadata["embed_model_id"]),
             )
         else:
             raise Exception(f"Unsupported platform: {platform}")
