@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from llama_index.core import VectorStoreIndex
 from llama_index.core.schema import TextNode
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.embeddings.ollama import OllamaEmbedding
 
 from nzambe.helpers.data_processing import (
     extract_testament_books_names,
@@ -239,7 +239,6 @@ class TestFromDocumentsToNodes:
         """Test document-to-node conversion in async mode (num_workers=None)."""
         # Setup
         mock_documents = [Mock(name="doc1"), Mock(name="doc2")]
-        mock_tokenizer = Mock()
         mock_embed_model = Mock()
         mock_settings.embed_model = mock_embed_model
 
@@ -251,7 +250,6 @@ class TestFromDocumentsToNodes:
         # Act
         result = await from_documents_to_nodes(
             documents=mock_documents,
-            model_tokenizer=mock_tokenizer,
             chunk_size=512,
             chunk_overlap=50,
         )
@@ -271,7 +269,6 @@ class TestFromDocumentsToNodes:
         """Test document to node conversion in multiprocessing mode."""
         # Setup
         mock_documents = [Mock(name="doc1"), Mock(name="doc2")]
-        mock_tokenizer = Mock()
         mock_embed_model = Mock()
         mock_settings.embed_model = mock_embed_model
 
@@ -283,7 +280,6 @@ class TestFromDocumentsToNodes:
         # Act
         result = await from_documents_to_nodes(
             documents=mock_documents,
-            model_tokenizer=mock_tokenizer,
             chunk_size=512,
             chunk_overlap=50,
             num_workers=4,
@@ -311,6 +307,7 @@ class TestFromDocumentsToNodes:
         mock_documents = [Mock()]
         mock_settings.embed_model = Mock()
         mock_tokenizer = Mock()
+        mock_settings.tokenizer = mock_tokenizer
         mock_pipeline_instance = Mock()
         mock_pipeline_instance.arun = AsyncMock(return_value=["node1"])
         mock_pipeline_class.return_value = mock_pipeline_instance
@@ -322,7 +319,6 @@ class TestFromDocumentsToNodes:
         # Act
         await from_documents_to_nodes(
             documents=mock_documents,
-            model_tokenizer=mock_tokenizer,
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             paragraph_separator=paragraph_separator,
@@ -333,7 +329,6 @@ class TestFromDocumentsToNodes:
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             paragraph_separator=paragraph_separator,
-            tokenizer=mock_tokenizer,
         )
 
 
@@ -369,40 +364,22 @@ class TestBuildDocumentsIndex:
         )
 
     @pytest.mark.asyncio
-    async def test_build_documents_index_requires_tokenizer(self, tmp_path):
-        """Test that model_tokenizer is required when building a new index."""
-        # Act & Assert
-        with pytest.raises(
-            Exception, match="model_tokenizer is required to build index"
-        ):
-            await build_documents_index(
-                index_storage_dir=tmp_path,
-                input_data_directory="/data",
-                input_data_files=None,
-                document_split_chunk_size=512,
-                document_split_chunk_overlap=50,
-                model_tokenizer=None,
-            )
-
-    @pytest.mark.asyncio
-    # @patch("os.path.exists", return_value=False)
     @patch("nzambe.helpers.data_processing.Settings")
     async def test_build_documents_index_unsupported_embed_model(
         self, mock_settings, tmp_path
     ):
-        """Test that a non-HuggingFace embed model raises an exception."""
+        """Test that a non-Ollama embed model raises an exception."""
         # Setup
-        mock_settings.embed_model = Mock(spec=object)  # Not HuggingFaceEmbedding
+        mock_settings.embed_model = Mock(spec=object)  # Not OllamaEmbedding
 
         # Act & Assert
-        with pytest.raises(Exception, match="Unsupported embed model"):
+        with pytest.raises(Exception, match="Unsupported embedding model"):
             await build_documents_index(
                 index_storage_dir=tmp_path,
                 input_data_directory="/data",
                 input_data_files=None,
                 document_split_chunk_size=512,
                 document_split_chunk_overlap=50,
-                model_tokenizer=Mock(),
             )
 
     @pytest.mark.asyncio
@@ -414,7 +391,7 @@ class TestBuildDocumentsIndex:
     ):
         """Test creating a new index from scratch."""
         # Setup
-        embed_model = Mock(spec=HuggingFaceEmbedding, model_name="test-model")
+        embed_model = Mock(spec=OllamaEmbedding, model_name="test-model")
         embed_model.get_text_embedding_batch.return_value = [
             np.random.rand(5),
             np.random.rand(5),
@@ -435,7 +412,6 @@ class TestBuildDocumentsIndex:
             input_data_files=None,
             document_split_chunk_size=512,
             document_split_chunk_overlap=50,
-            model_tokenizer=Mock(),
         )
 
         # Assert
@@ -448,8 +424,8 @@ class TestBuildDocumentsIndex:
         with open(index_dir / "nzambe_metadata.json", "r") as f:
             metadata = json.load(f)
 
-        assert metadata["embed_model_id"] == mock_settings.embed_model.model_name
-        assert metadata["platform"] == "huggingface"
+        assert metadata["embed_model_name"] == mock_settings.embed_model.model_name
+        assert metadata["platform"] == "ollama"
 
         # check index was written
         assert len(list(index_dir.glob("*store.json"))) > 0
@@ -467,7 +443,7 @@ class TestBuildDocumentsIndex:
     ):
         """Test creating an index with specific input files."""
         # Setup
-        embed_model = Mock(spec=HuggingFaceEmbedding, model_name="test-model")
+        embed_model = Mock(spec=OllamaEmbedding, model_name="test-model")
         embed_model.get_text_embedding_batch.return_value = [np.random.rand(5)]
         mock_settings.embed_model = embed_model
 
@@ -485,7 +461,6 @@ class TestBuildDocumentsIndex:
             input_data_files=input_files,
             document_split_chunk_size=512,
             document_split_chunk_overlap=50,
-            model_tokenizer=Mock(),
         )
 
         # Assert
@@ -504,7 +479,7 @@ class TestBuildDocumentsIndex:
     ):
         """Test creating index with multiprocessing."""
         # Setup
-        mock_embed_model = Mock(spec=HuggingFaceEmbedding, model_name="test-model")
+        mock_embed_model = Mock(spec=OllamaEmbedding, model_name="test-model")
         mock_embed_model.get_text_embedding_batch.return_value = [np.random.rand(5)]
         mock_settings.embed_model = mock_embed_model
 
@@ -522,7 +497,6 @@ class TestBuildDocumentsIndex:
             input_data_files=None,
             document_split_chunk_size=512,
             document_split_chunk_overlap=50,
-            model_tokenizer=Mock(),
             num_workers=num_workers,
         )
 

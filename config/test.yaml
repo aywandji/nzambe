@@ -1,0 +1,13 @@
+llm:
+  embedding_model:
+    name: "nomic-embed-text:137m-v1.5-fp16"
+    platform: "ollama"
+    tokenizer: "bert-base-uncased"
+
+eval:
+  ollama_model: "gemma3:1b-it-qat"
+  ollama_base_url: "http://localhost:11434"
+  embedding_model:
+    name: "ollama_chat/nomic-embed-text:137m-v1.5-fp16"
+    platform: "litellm"
+    tokenizer: ""

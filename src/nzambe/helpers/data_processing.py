@@ -2,10 +2,8 @@ import json
 import logging
 import os
 import re
-from collections.abc import Callable
 from pathlib import Path
 from typing import Sequence
-
 from llama_index.core import (
     Document,
     Settings,
@@ -21,8 +19,9 @@ from llama_index.core.node_parser.text.sentence import (
     SentenceSplitter,
 )
 from llama_index.core.schema import BaseNode
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.embeddings.ollama import OllamaEmbedding
 
+from nzambe.config import nzambe_settings
 from nzambe.constants import (
     VERSE_PATTERN,
     OLD_TESTAMENT_FIRST_BOOK,
@@ -130,7 +129,6 @@ def split_bible_text_by_books(
 
 async def from_documents_to_nodes(
     documents: list[Document],
-    model_tokenizer: Callable,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
     chunk_overlap: int = SENTENCE_CHUNK_OVERLAP,
     paragraph_separator: str = "\n\n",
@@ -142,8 +140,6 @@ async def from_documents_to_nodes(
     for performance optimization.
 
     :param documents: A list of `Document` instances to be processed.
-    :param model_tokenizer: Callable tokenizer function to be used for splitting sentences
-        and processing document text.
     :param chunk_size: Integer defining the maximum size of text chunks to create during
         sentence splitting.
     :param chunk_overlap: Integer defining overlapping sentences between consecutive text
@@ -162,7 +158,6 @@ async def from_documents_to_nodes(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             paragraph_separator=paragraph_separator,
-            tokenizer=model_tokenizer,
         )
     ]
     if num_workers is None:
@@ -185,11 +180,13 @@ async def build_documents_index(
     input_data_files: list[str | Path] | None,
     document_split_chunk_size: int,
     document_split_chunk_overlap: int,
-    model_tokenizer: Callable | None = None,
     paragraph_separator: str = "\n\n",
     insert_batch_size: int = 2048,
     num_workers: int | None = None,
 ):
+    if nzambe_settings.env not in ("local", "test"):
+        raise Exception("Documents index can only be built locally for now.")
+
     if os.path.exists(index_storage_dir) and len(os.listdir(index_storage_dir)) > 0:
         logger.info("loading index from disk...")
         storage_context = StorageContext.from_defaults(
@@ -197,17 +194,18 @@ async def build_documents_index(
         )
         index = load_index_from_storage(storage_context)
     else:
-        if model_tokenizer is None:
-            raise Exception("model_tokenizer is required to build index")
+        if nzambe_settings.env in ("local", "test") and (
+            not isinstance(Settings.embed_model, OllamaEmbedding)
+        ):
+            raise Exception(
+                f"Unsupported embedding model: {Settings.embed_model} for local serving"
+            )
 
         # saving index creation metadata (useful for loading back the index)
-        platform = "huggingface"
-        if not isinstance(Settings.embed_model, HuggingFaceEmbedding):
-            raise Exception(f"Unsupported embed model: {Settings.embed_model}")
-
         metadata = {
-            "embed_model_id": Settings.embed_model.model_name,
-            "platform": platform,
+            "embed_model_name": Settings.embed_model.model_name,
+            "platform": nzambe_settings.llm.embedding_model.platform,
+            "tokenizer": nzambe_settings.llm.embedding_model.tokenizer,
         }
         with open(os.path.join(index_storage_dir, "nzambe_metadata.json"), "w") as f:
             json.dump(metadata, f)
@@ -222,7 +220,6 @@ async def build_documents_index(
 
         nodes = await from_documents_to_nodes(
             documents,
-            model_tokenizer,
             chunk_size=document_split_chunk_size,
             chunk_overlap=document_split_chunk_overlap,
             paragraph_separator=paragraph_separator,

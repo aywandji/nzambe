@@ -72,22 +72,20 @@ async def lifespan(app: FastAPI):
     )
 
     # Setup LLMs
-    embedding_model_name = nzambe_settings.llm.embedding_model_name
-    llm_name = nzambe_settings.llm.model_name
-    model_tokenizer = setup_llama_index_llms(
-        embedding_model_name=embedding_model_name,
+    setup_llama_index_llms(
         embed_batch_size=nzambe_settings.llm.embed_batch_size,
-        llm_model_name=llm_name,
+        llm_model_name=nzambe_settings.llm.model_name,
         context_window=nzambe_settings.llm.context_window,
         request_timeout=nzambe_settings.llm.request_timeout,
     )
 
-    logger.info(f"Using embedding model: {embedding_model_name}")
-    logger.info(f"Using LLM: {llm_name}")
+    logger.info(f"Using embedding model: {nzambe_settings.llm.embedding_model}")
+    logger.info(f"Using LLM: {nzambe_settings.llm.model_name}")
 
     # Index storage directory
     index_storage_dir = (
-        data_folder_path / f"documents_index_{embedding_model_name.replace('/', '--')}"
+        data_folder_path
+        / f"documents_index_{str(nzambe_settings.llm.embedding_model).replace('/', '--')}"
     )
     input_data_directory = None
     input_data_files = list(
@@ -102,7 +100,6 @@ async def lifespan(app: FastAPI):
         document_split_chunk_size=Settings.embed_model.max_length
         - 10,  # chunk size based on embedding model max length
         document_split_chunk_overlap=nzambe_settings.index.chunk_overlap,
-        model_tokenizer=model_tokenizer,
         paragraph_separator=nzambe_settings.index.paragraph_separator,
         insert_batch_size=nzambe_settings.index.insert_batch_size,
     )

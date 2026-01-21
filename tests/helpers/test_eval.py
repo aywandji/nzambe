@@ -7,10 +7,7 @@ import pytest
 from langfuse.api import ObservationLevel
 from llama_index.core.llama_dataset.legacy.embedding import EmbeddingQAFinetuneDataset
 
-from nzambe.helpers.eval import (
-    run_nightly_benchmark,
-    generate_new_questions_from_index,
-)
+from nzambe.helpers.eval import run_nightly_benchmark, generate_new_questions_from_index
 
 
 class TestRunNightlyBenchmark:
@@ -224,16 +221,21 @@ class TestRunNightlyBenchmark:
 class TestGenerateNewQuestionsFromIndex:
     """Unit tests for generate_new_questions_from_index function."""
 
+    @patch("nzambe.helpers.eval.StorageContext")
     @patch("nzambe.helpers.eval.generate_question_context_pairs")
     @patch("nzambe.helpers.eval.load_index_from_storage")
     def test_generate_new_questions_success(
-        self, mock_load_index, mock_generate_pairs, tmp_path
+        self, mock_load_index, mock_generate_pairs, mock_storage_context, tmp_path
     ):
         """Test successful question generation from index."""
-        # Setup real metadata file
+        # Setup the metadata file
         index_storage_dir = str(tmp_path)
         with open(os.path.join(index_storage_dir, "nzambe_metadata.json"), "w") as f:
-            json.dump({"platform": "huggingface", "embed_model_id": "test-model"}, f)
+            json.dump({"platform": "ollama", "embed_model_name": "test-model"}, f)
+
+        # Mock StorageContext
+        mock_storage = Mock()
+        mock_storage_context.from_defaults.return_value = mock_storage
 
         # Mock index
         mock_index = Mock()
@@ -255,11 +257,7 @@ class TestGenerateNewQuestionsFromIndex:
         mock_generate_pairs.return_value = mock_qa_dataset
 
         # Act
-        with (
-            patch("nzambe.helpers.eval.HuggingFaceEmbedding"),
-            patch("nzambe.helpers.eval.StorageContext"),
-            patch("nzambe.helpers.eval.ollama_llm"),
-        ):
+        with patch("nzambe.helpers.eval.ollama_llm"):
             result = generate_new_questions_from_index(
                 ollama_model_name="llama2",
                 index_storage_dir=index_storage_dir,
@@ -273,10 +271,11 @@ class TestGenerateNewQuestionsFromIndex:
         mock_generate_pairs.assert_called_once()
         assert not mock_qa_dataset.save_json.called  # No path provided
 
+    @patch("nzambe.helpers.eval.StorageContext")
     @patch("nzambe.helpers.eval.load_index_from_storage")
     @patch("nzambe.helpers.eval.generate_question_context_pairs")
     def test_generate_new_questions_with_existing_dataset(
-        self, mock_generate_pairs, mock_load_index, tmp_path
+        self, mock_generate_pairs, mock_load_index, storage_context, tmp_path
     ):
         """Test question generation updates existing dataset."""
         # Mock index with 3 nodes, but the first node already has questions
@@ -304,13 +303,9 @@ class TestGenerateNewQuestionsFromIndex:
             Path(__file__).parents[1] / "data" / "qa_dataset.json"
         )
         with open(os.path.join(index_storage_dir, "nzambe_metadata.json"), "w") as f:
-            json.dump({"platform": "huggingface", "embed_model_id": "test-model"}, f)
+            json.dump({"platform": "ollama", "embed_model_name": "test-model"}, f)
 
-        with (
-            patch("nzambe.helpers.eval.ollama_llm"),
-            patch("nzambe.helpers.eval.HuggingFaceEmbedding"),
-            patch("nzambe.helpers.eval.StorageContext"),
-        ):
+        with patch("nzambe.helpers.eval.ollama_llm"):
             updated_dataset = generate_new_questions_from_index(
                 ollama_model_name="llama2",
                 index_storage_dir=index_storage_dir,
@@ -352,25 +347,27 @@ class TestGenerateNewQuestionsFromIndex:
                 random_seed=42,
             )
 
-    @patch(
-        "builtins.open",
-        new_callable=mock_open,
-        read_data='{"platform": "openai", "embed_model_id": "test"}',
-    )
-    def test_generate_new_questions_unsupported_platform(self, mock_file):
+    def test_generate_new_questions_unsupported_platform(self, tmp_path):
         """Test that unsupported platform raises exception."""
         # Act & Assert
+        index_storage_dir = str(tmp_path)
+        with open(os.path.join(index_storage_dir, "nzambe_metadata.json"), "w") as f:
+            json.dump({"platform": "openai", "embed_model_name": "test-model"}, f)
+
         with pytest.raises(Exception, match="Unsupported platform"):
             generate_new_questions_from_index(
                 ollama_model_name="llama2",
-                index_storage_dir="/fake/index",
+                index_storage_dir=index_storage_dir,
                 num_questions_per_node=2,
                 num_nodes_to_sample=5,
                 random_seed=42,
             )
 
+    @patch("nzambe.helpers.eval.StorageContext")
     @patch("nzambe.helpers.eval.load_index_from_storage")
-    def test_generate_new_questions_no_candidate_nodes(self, mock_load_index, tmp_path):
+    def test_generate_new_questions_no_candidate_nodes(
+        self, mock_load_index, storage_context, tmp_path
+    ):
         """Test when all nodes already have questions."""
         questions_dataset_path = str(
             Path(__file__).parents[1] / "data" / "qa_dataset.json"
@@ -379,7 +376,7 @@ class TestGenerateNewQuestionsFromIndex:
         # Mock index with same nodes
         index_storage_dir = str(tmp_path)
         with open(os.path.join(index_storage_dir, "nzambe_metadata.json"), "w") as f:
-            json.dump({"platform": "huggingface", "embed_model_id": "test-model"}, f)
+            json.dump({"platform": "ollama", "embed_model_name": "test-model"}, f)
         mock_index = Mock()
         mock_index.storage_context.vector_store.data.embedding_dict.keys.return_value = list(
             existing_dataset.corpus.keys()
@@ -387,23 +384,20 @@ class TestGenerateNewQuestionsFromIndex:
         mock_load_index.return_value = mock_index
 
         # Act
-        with (
-            patch("nzambe.helpers.eval.HuggingFaceEmbedding"),
-            patch("nzambe.helpers.eval.StorageContext"),
-        ):
-            result = generate_new_questions_from_index(
-                ollama_model_name="llama2",
-                index_storage_dir=index_storage_dir,
-                num_questions_per_node=2,
-                num_nodes_to_sample=5,
-                random_seed=42,
-                questions_dataset_path=questions_dataset_path,
-            )
+        result = generate_new_questions_from_index(
+            ollama_model_name="llama2",
+            index_storage_dir=index_storage_dir,
+            num_questions_per_node=2,
+            num_nodes_to_sample=5,
+            random_seed=42,
+            questions_dataset_path=questions_dataset_path,
+        )
 
         # Assert
         assert result == []
 
     @patch("nzambe.helpers.eval.generate_question_context_pairs")
+    @patch("nzambe.helpers.eval.StorageContext")
     @patch("nzambe.helpers.eval.load_index_from_storage")
     @patch("nzambe.helpers.eval.nzambe_settings")
     @patch(
@@ -411,15 +405,21 @@ class TestGenerateNewQuestionsFromIndex:
         "Default prompt with questions",
     )
     def test_generate_new_questions_prompt_template(
-        self, mock_settings, mock_load_index, mock_generate_pairs, tmp_path
+        self,
+        mock_settings,
+        mock_load_index,
+        storage_context,
+        mock_generate_pairs,
+        tmp_path,
     ):
         """Test that QA prompt template is correctly formatted."""
         # Setup
         mock_settings.eval.qa_generate_prompt = "Custom: {{default_qa_generate_prompt}}"
+        mock_settings.env = "test"
 
         index_storage_dir = str(tmp_path)
         with open(os.path.join(index_storage_dir, "nzambe_metadata.json"), "w") as f:
-            json.dump({"platform": "huggingface", "embed_model_id": "test-model"}, f)
+            json.dump({"platform": "ollama", "embed_model_name": "test-model"}, f)
 
         mock_index = Mock()
         mock_index.storage_context.vector_store.data.embedding_dict.keys.return_value = [
@@ -433,11 +433,7 @@ class TestGenerateNewQuestionsFromIndex:
         mock_generate_pairs.return_value = mock_qa_dataset
 
         # Act
-        with (
-            patch("nzambe.helpers.eval.HuggingFaceEmbedding"),
-            patch("nzambe.helpers.eval.StorageContext"),
-            patch("nzambe.helpers.eval.ollama_llm"),
-        ):
+        with patch("nzambe.helpers.eval.ollama_llm"):
             generate_new_questions_from_index(
                 ollama_model_name="llama2",
                 index_storage_dir=index_storage_dir,
@@ -447,7 +443,7 @@ class TestGenerateNewQuestionsFromIndex:
             )
 
         # Assert
-        # Check that generate_question_context_pairs was called with formatted prompt
+        # Check that generate_question_context_pairs was called with a formatted prompt
         call_kwargs = mock_generate_pairs.call_args[1]
         assert "qa_generate_prompt_tmpl" in call_kwargs
         # The prompt should have the default replaced and " questions" -> " question(s)"
@@ -456,15 +452,16 @@ class TestGenerateNewQuestionsFromIndex:
         assert call_kwargs["num_questions_per_chunk"] == 3
 
     @patch("nzambe.helpers.eval.generate_question_context_pairs")
+    @patch("nzambe.helpers.eval.StorageContext")
     @patch("nzambe.helpers.eval.load_index_from_storage")
     def test_generate_new_questions_sample_size_limit(
-        self, mock_load_index, mock_generate_pairs, tmp_path
+        self, mock_load_index, storage_context, mock_generate_pairs, tmp_path
     ):
         """Test that requesting more samples than available nodes raises an error."""
         # Setup
         index_storage_dir = str(tmp_path)
         with open(os.path.join(index_storage_dir, "nzambe_metadata.json"), "w") as f:
-            json.dump({"platform": "huggingface", "embed_model_id": "test-model"}, f)
+            json.dump({"platform": "ollama", "embed_model_name": "test-model"}, f)
 
         mock_index = Mock()
         # Only 2 candidate nodes available
@@ -479,8 +476,6 @@ class TestGenerateNewQuestionsFromIndex:
 
         # Act - request 10 samples but only 2 available should raise an error
         with (
-            patch("nzambe.helpers.eval.HuggingFaceEmbedding"),
-            patch("nzambe.helpers.eval.StorageContext"),
             patch("nzambe.helpers.eval.ollama_llm"),
             pytest.raises(ValueError, match="Sample larger than population"),
         ):
