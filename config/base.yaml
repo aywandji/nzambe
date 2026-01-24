@@ -2,10 +2,11 @@
 # This configuration is shared across all environments
 
 llm:
-  model_name: "gemma3:1b-it-qat"
-  context_window: 4096
-  request_timeout: 360.0
-  embed_batch_size: 10
+  query_model:
+    name: "gemma3:1b-it-qat"
+    platform: "ollama"
+    context_window: 8000
+    request_timeout: 360.0
 
 index:
   # chunk_size is computed from the embedding model max_length - 10

@@ -12,6 +12,8 @@ from llama_index.core.llama_dataset.legacy.embedding import (
     EmbeddingQAFinetuneDataset,
     DEFAULT_QA_GENERATE_PROMPT_TMPL,
 )
+from llama_index.core.schema import TextNode
+from llama_index.core.vector_stores import SimpleVectorStore
 from llama_index.embeddings.ollama import OllamaEmbedding
 
 from ragas import evaluate
@@ -27,6 +29,9 @@ logger = logging.getLogger(__name__)
 
 
 def run_nightly_benchmark(last_n_hours: int, num_traces_limit: int = 1):
+    if nzambe_settings.eval is None:
+        raise Exception("Evaluation settings not found in the config.")
+
     langfuse = setup_langfuse_client()
 
     # 1. Fetch today's traces (random sample of 50)
@@ -137,6 +142,9 @@ def generate_new_questions_from_index(
     random_seed: int,
     questions_dataset_path: str | None = None,
 ):
+    if nzambe_settings.eval is None:
+        raise Exception("Evaluation settings not found in the config.")
+
     try:
         with open(os.path.join(index_storage_dir, "nzambe_metadata.json"), "r") as f:
             metadata = json.load(f)
@@ -171,9 +179,10 @@ def generate_new_questions_from_index(
 
     # 2. Filter out nodes that already have existing questions
     # The doc_id is the unique identifier for the node in the index's docstore/graph store.
+    vector_store: SimpleVectorStore = index.storage_context.vector_store  # type: ignore
     candidate_node_ids = [
         node_id
-        for node_id in index.storage_context.vector_store.data.embedding_dict.keys()
+        for node_id in vector_store.data.embedding_dict.keys()
         if node_id not in existing_node_ids
     ]
 
@@ -187,7 +196,7 @@ def generate_new_questions_from_index(
         logger.info("No new nodes available for question generation.")
         return []
 
-    selected_nodes = random.sample(
+    selected_nodes: list[TextNode] = random.sample(  # type: ignore
         index.docstore.get_nodes(candidate_node_ids), num_nodes_to_sample
     )
     logger.info(

@@ -4,7 +4,6 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Depends, Request
-from llama_index.core import Settings
 from llama_index.core.postprocessor import SimilarityPostprocessor
 from llama_index.core.prompts import RichPromptTemplate
 from llama_index.core.prompts.default_prompts import (
@@ -65,7 +64,6 @@ async def lifespan(app: FastAPI):
     setup_observability()
 
     # Load configuration from settings
-    data_folder_path = Path(nzambe_settings.data.folder_path)
     custom_qa_prompt = RichPromptTemplate(nzambe_settings.query_engine.qa_prompt)
     custom_refine_prompt = RichPromptTemplate(
         nzambe_settings.query_engine.refine_prompt
@@ -73,58 +71,51 @@ async def lifespan(app: FastAPI):
 
     # Setup LLMs
     setup_llama_index_llms(
-        embed_batch_size=nzambe_settings.llm.embed_batch_size,
-        llm_model_name=nzambe_settings.llm.model_name,
-        context_window=nzambe_settings.llm.context_window,
-        request_timeout=nzambe_settings.llm.request_timeout,
+        embed_batch_size=nzambe_settings.llm.embedding_model.embed_batch_size,
+        llm_model_name=nzambe_settings.llm.query_model.name,
+        context_window=nzambe_settings.llm.query_model.context_window,
+        request_timeout=nzambe_settings.llm.query_model.request_timeout,
     )
 
     logger.info(f"Using embedding model: {nzambe_settings.llm.embedding_model}")
-    logger.info(f"Using LLM: {nzambe_settings.llm.model_name}")
+    logger.info(f"Using LLM: {nzambe_settings.llm.query_model.name}")
 
-    # Index storage directory
-    index_storage_dir = (
-        data_folder_path
-        / f"documents_index_{str(nzambe_settings.llm.embedding_model).replace('/', '--')}"
-    )
-    input_data_directory = None
-    input_data_files = list(
-        (data_folder_path / nzambe_settings.data.books_subfolder).glob("*.txt")
-    )
-
-    # Build or load index
-    index = await build_documents_index(
-        index_storage_dir,
-        input_data_directory,
-        input_data_files,
-        document_split_chunk_size=Settings.embed_model.max_length
-        - 10,  # chunk size based on embedding model max length
-        document_split_chunk_overlap=nzambe_settings.index.chunk_overlap,
-        paragraph_separator=nzambe_settings.index.paragraph_separator,
-        insert_batch_size=nzambe_settings.index.insert_batch_size,
-    )
-
-    # Create a query engine
-    node_postprocessors = []
-    if nzambe_settings.query_engine.similarity_cutoff is not None:
-        node_postprocessors.append(
-            SimilarityPostprocessor(
-                similarity_cutoff=nzambe_settings.query_engine.similarity_cutoff
-            )
+    if nzambe_settings.env in ("local", "test"):
+        data_folder_path = Path(nzambe_settings.data.folder_path)
+        index_dir_name = f"documents_index_{str(nzambe_settings.llm.embedding_model.name).replace('/', '--')}"
+        index_storage_path = data_folder_path / index_dir_name.replace(":", "--")
+        input_data_files = list(
+            (data_folder_path / nzambe_settings.data.books_subfolder).glob("*.txt")
         )
+        index = await build_documents_index(
+            index_storage_path,
+            document_split_chunk_overlap=nzambe_settings.index.chunk_overlap,
+            paragraph_separator=nzambe_settings.index.paragraph_separator,
+            insert_batch_size=nzambe_settings.index.insert_batch_size,
+            input_data_files=input_data_files,
+        )
+        # Create a query engine
+        node_postprocessors = []
+        if nzambe_settings.query_engine.similarity_cutoff is not None:
+            node_postprocessors.append(
+                SimilarityPostprocessor(
+                    similarity_cutoff=nzambe_settings.query_engine.similarity_cutoff
+                )
+            )
 
-    app.state.query_engine = index.as_query_engine(
-        similarity_top_k=nzambe_settings.query_engine.similarity_top_k,
-        response_mode=nzambe_settings.query_engine.response_mode,
-        node_postprocessors=node_postprocessors,
-        text_qa_template=custom_qa_prompt or DEFAULT_TEXT_QA_PROMPT,
-        refine_template=custom_refine_prompt or DEFAULT_REFINE_PROMPT,
-    )
-    logger.info("Server initialization complete. Ready to accept requests.")
+        app.state.query_engine = index.as_query_engine(
+            similarity_top_k=nzambe_settings.query_engine.similarity_top_k,
+            response_mode=nzambe_settings.query_engine.response_mode,
+            node_postprocessors=node_postprocessors,
+            text_qa_template=custom_qa_prompt or DEFAULT_TEXT_QA_PROMPT,
+            refine_template=custom_refine_prompt or DEFAULT_REFINE_PROMPT,
+        )
+        logger.info("Server initialization complete. Ready to accept requests.")
+    else:
+        logger.error("Server started without index. No request will be processed.")
 
     yield
 
-    # Cleanup (if needed)
     logger.info("Server shutting down...")
 
 

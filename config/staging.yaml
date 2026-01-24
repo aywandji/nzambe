@@ -3,7 +3,13 @@
 
 # Example: Use smaller batch sizes for resource-constrained staging environment
 llm:
-  embed_batch_size: 5
+  query_model:
+    platform: "openai"
+    name: "gpt-5-nano-2025-08-07"
+  embedding_model:
+    name: "text-embedding-3-small"
+    platform: "openai"
+    tokenizer: "cl100k_base"
 
 index:
   insert_batch_size: 1024
@@ -11,6 +17,7 @@ index:
 query_engine:
   similarity_top_k: 2
 
+eval: null
 # Add staging-specific data paths if needed
 # data:
 #   folder_path: "/opt/nzambe/data/bible"

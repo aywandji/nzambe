@@ -35,19 +35,33 @@ class EmbeddingModel(BaseModel):
     name: str
     platform: str
     tokenizer: str
+    embed_batch_size: int = 10
+    api_key: str | None = Field(default=None, validation_alias="OPENAI_API_KEY")
+    other_kwargs: dict | None = None
 
     def __str__(self):
         return f"{self.platform}--{self.name}--{self.tokenizer}"
 
 
+class QueryModel(BaseModel):
+    """Query model configuration for RAG final response generation."""
+
+    name: str
+    platform: str
+    context_window: int = 4096
+    request_timeout: float = 360.0
+    api_key: str | None = Field(default=None, validation_alias="OPENAI_API_KEY")
+    other_kwargs: dict | None = None
+
+    def __str__(self):
+        return f"{self.platform}--{self.name}"
+
+
 class LLMConfig(BaseModel):
     """LLM and embedding model configuration."""
 
-    model_name: str = "gemma3:1b-it-qat"
+    query_model: QueryModel
     embedding_model: EmbeddingModel
-    context_window: int = 4096
-    request_timeout: float = 360.0
-    embed_batch_size: int = 10
 
 
 class IndexConfig(BaseModel):
@@ -113,7 +127,7 @@ class NzambeSettings(BaseSettings):
         extra="ignore",
     )
 
-    env: str = Field(default="local", alias="NZAMBE_ENV")
+    env: str = Field(alias="NZAMBE_ENV")
 
     # Nested configuration groups
     llm: LLMConfig
@@ -121,7 +135,7 @@ class NzambeSettings(BaseSettings):
     query_engine: QueryEngineConfig
     langfuse: LangfuseConfig = LangfuseConfig()
     data: DataConfig
-    eval: EvalConfig
+    eval: EvalConfig | None = None
 
     def __init__(self, **kwargs):
         """
@@ -148,6 +162,7 @@ class NzambeSettings(BaseSettings):
 
         # Load environment-specific configuration if it exists
         env = os.getenv("NZAMBE_ENV", "local")
+        config_data["env"] = env
         env_config_path = config_dir / f"{env}.yaml"
         if env_config_path.exists():
             env_config = self._load_yaml(env_config_path)

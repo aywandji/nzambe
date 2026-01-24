@@ -4,6 +4,8 @@ import os
 import re
 from pathlib import Path
 from typing import Sequence
+
+import ollama
 from llama_index.core import (
     Document,
     Settings,
@@ -13,6 +15,7 @@ from llama_index.core import (
     VectorStoreIndex,
 )
 from llama_index.core.constants import DEFAULT_CHUNK_SIZE
+from llama_index.core.indices.base import BaseIndex
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.node_parser.text.sentence import (
     SENTENCE_CHUNK_OVERLAP,
@@ -20,6 +23,7 @@ from llama_index.core.node_parser.text.sentence import (
 )
 from llama_index.core.schema import BaseNode
 from llama_index.embeddings.ollama import OllamaEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
 
 from nzambe.config import nzambe_settings
 from nzambe.constants import (
@@ -174,50 +178,87 @@ async def from_documents_to_nodes(
     return nodes
 
 
+def get_document_split_chunk_size() -> int:
+    if isinstance(Settings.embed_model, OllamaEmbedding):
+        embed_model_context_length = None
+        show_response = ollama.show(Settings.embed_model.model_name)
+        if show_response.modelinfo is not None:
+            for k, v in show_response.modelinfo.items():
+                if "context_length" in k:
+                    embed_model_context_length = int(v)
+                    break
+        if embed_model_context_length is None:
+            raise Exception("Could not determine embedding model context length.")
+    elif isinstance(Settings.embed_model, OpenAIEmbedding):
+        embed_model_context_length = 8192  # default defined at
+        # https://platform.openai.com/docs/guides/embeddings/#embedding-models
+    else:
+        raise Exception(f"Unsupported embedding model: {Settings.embed_model}")
+
+    # set a chunk size smaller than embedding model context length and llm context window
+    # to reserve space for the user query and the qa prompt.
+    # the smaller the value, the more precise the embeddings will be.
+    embed_model_input_length = int(0.5 * embed_model_context_length)
+    llm_engine_context_length = int(
+        0.5 * nzambe_settings.llm.query_model.context_window
+    )
+    return min(embed_model_input_length, llm_engine_context_length)
+
+
+# TODO: turn this into a class that will have a load_or_build method which will return an index instance
 async def build_documents_index(
-    index_storage_dir: Path,
-    input_data_directory: str | None,
-    input_data_files: list[str | Path] | None,
-    document_split_chunk_size: int,
+    index_storage_path: Path,
     document_split_chunk_overlap: int,
+    input_data_files: list[str] | None = None,
     paragraph_separator: str = "\n\n",
     insert_batch_size: int = 2048,
     num_workers: int | None = None,
-):
+) -> VectorStoreIndex | BaseIndex:
     if nzambe_settings.env not in ("local", "test"):
         raise Exception("Documents index can only be built locally for now.")
+    elif not (
+        isinstance(Settings.embed_model, OllamaEmbedding)
+        or isinstance(Settings.embed_model, OpenAIEmbedding)
+    ):
+        raise Exception(
+            f"Unsupported embedding model: {Settings.embed_model} for local serving"
+        )
 
-    if os.path.exists(index_storage_dir) and len(os.listdir(index_storage_dir)) > 0:
+    if os.path.exists(index_storage_path) and len(os.listdir(index_storage_path)) > 0:
         logger.info("loading index from disk...")
         storage_context = StorageContext.from_defaults(
-            persist_dir=str(index_storage_dir)
+            persist_dir=str(index_storage_path)
         )
         index = load_index_from_storage(storage_context)
     else:
-        if nzambe_settings.env in ("local", "test") and (
-            not isinstance(Settings.embed_model, OllamaEmbedding)
-        ):
-            raise Exception(
-                f"Unsupported embedding model: {Settings.embed_model} for local serving"
-            )
+        if input_data_files is None:
+            raise Exception("input_data_files must be provided when building index.")
+
+        # TODO: remove line below
+        input_data_files = input_data_files[:3]
 
         # saving index creation metadata (useful for loading back the index)
+        embedding_model_conf = nzambe_settings.llm.embedding_model.model_dump()
+        if embedding_model_conf["name"] != Settings.embed_model.model_name:
+            raise Exception(
+                f"Embedding model name mismatch: {embedding_model_conf['name']} != {Settings.embed_model.model_name}"
+            )
+
         metadata = {
-            "embed_model_name": Settings.embed_model.model_name,
-            "platform": nzambe_settings.llm.embedding_model.platform,
-            "tokenizer": nzambe_settings.llm.embedding_model.tokenizer,
+            "embedding_model_conf": embedding_model_conf,
+            "index_conf": nzambe_settings.index.model_dump(),
         }
-        with open(os.path.join(index_storage_dir, "nzambe_metadata.json"), "w") as f:
+        index_storage_path.mkdir(parents=True, exist_ok=True)
+        with open(os.path.join(index_storage_path, "nzambe_metadata.json"), "w") as f:
             json.dump(metadata, f)
 
         logger.info("building index from scratch...")
         # load documents
         documents = SimpleDirectoryReader(
-            input_dir=input_data_directory,
-            input_files=input_data_files,
-            exclude_hidden=False,
+            input_files=input_data_files, exclude_hidden=False
         ).load_data()
 
+        document_split_chunk_size = get_document_split_chunk_size()
         nodes = await from_documents_to_nodes(
             documents,
             chunk_size=document_split_chunk_size,
@@ -232,5 +273,5 @@ async def build_documents_index(
             embed_model=Settings.embed_model,
         )
         logger.info("persisting index to disk...")
-        index.storage_context.persist(index_storage_dir)
+        index.storage_context.persist(index_storage_path)
     return index
