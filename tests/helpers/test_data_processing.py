@@ -5,9 +5,8 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import numpy as np
 import pytest
-from llama_index.core import VectorStoreIndex
+from llama_index.core import VectorStoreIndex, Settings
 from llama_index.core.schema import TextNode
-from llama_index.embeddings.ollama import OllamaEmbedding
 
 from nzambe.helpers.data_processing import (
     extract_testament_books_names,
@@ -232,16 +231,10 @@ class TestFromDocumentsToNodes:
 
     @pytest.mark.asyncio
     @patch("nzambe.helpers.data_processing.IngestionPipeline")
-    @patch("nzambe.helpers.data_processing.Settings")
-    async def test_from_documents_to_nodes_async_mode(
-        self, mock_settings, mock_pipeline_class
-    ):
+    async def test_from_documents_to_nodes_async_mode(self, mock_pipeline_class):
         """Test document-to-node conversion in async mode (num_workers=None)."""
         # Setup
         mock_documents = [Mock(name="doc1"), Mock(name="doc2")]
-        mock_embed_model = Mock()
-        mock_settings.embed_model = mock_embed_model
-
         mock_pipeline_instance = Mock()
         ingestion_pipeline_outputs = ["node1", "node2"]
         mock_pipeline_instance.arun = AsyncMock(return_value=ingestion_pipeline_outputs)
@@ -258,19 +251,19 @@ class TestFromDocumentsToNodes:
         assert result == ingestion_pipeline_outputs
         mock_pipeline_instance.arun.assert_called_once_with(documents=mock_documents)
         # Verify embed_model was added to transformations
-        assert mock_embed_model in mock_pipeline_class.call_args[1]["transformations"]
+        assert (
+            Settings.embed_model
+            == mock_pipeline_class.call_args[1]["transformations"][1]
+        )
 
     @pytest.mark.asyncio
     @patch("nzambe.helpers.data_processing.IngestionPipeline")
-    @patch("nzambe.helpers.data_processing.Settings")
     async def test_from_documents_to_nodes_multiprocessing_mode(
-        self, mock_settings, mock_pipeline_class
+        self, mock_pipeline_class
     ):
         """Test document to node conversion in multiprocessing mode."""
         # Setup
         mock_documents = [Mock(name="doc1"), Mock(name="doc2")]
-        mock_embed_model = Mock()
-        mock_settings.embed_model = mock_embed_model
 
         mock_pipeline_instance = Mock()
         ingestion_pipeline_outputs = ["node1", "node2", "node3"]
@@ -291,23 +284,20 @@ class TestFromDocumentsToNodes:
             documents=mock_documents, num_workers=4
         )
         # Verify embed_model was NOT added when using multiprocessing
-        assert (
-            mock_embed_model not in mock_pipeline_class.call_args[1]["transformations"]
-        )
+        for v in mock_pipeline_class.call_args[1]["transformations"]:
+            assert v != Settings.embed_model
 
     @pytest.mark.asyncio
     @patch("nzambe.helpers.data_processing.IngestionPipeline")
     @patch("nzambe.helpers.data_processing.SentenceSplitter")
-    @patch("nzambe.helpers.data_processing.Settings")
     async def test_from_documents_to_nodes_custom_parameters(
-        self, mock_settings, mock_splitter_class, mock_pipeline_class
+        self, mock_splitter_class, mock_pipeline_class
     ):
         """Test that custom chunk parameters are passed to SentenceSplitter."""
         # Setup
         mock_documents = [Mock()]
-        mock_settings.embed_model = Mock()
         mock_tokenizer = Mock()
-        mock_settings.tokenizer = mock_tokenizer
+        Settings.tokenizer = mock_tokenizer
         mock_pipeline_instance = Mock()
         mock_pipeline_instance.arun = AsyncMock(return_value=["node1"])
         mock_pipeline_class.return_value = mock_pipeline_instance
@@ -345,15 +335,10 @@ class TestBuildDocumentsIndex:
         # Setup
         mock_index = Mock()
         mock_load_index.return_value = mock_index
-
         with tempfile.NamedTemporaryFile(mode="w", delete=True, dir=tmp_path):
             # create a temporary index file to ensure the loading process will be called
             result = await build_documents_index(
-                index_storage_dir=tmp_path,
-                input_data_directory=None,
-                input_data_files=None,
-                document_split_chunk_size=512,
-                document_split_chunk_overlap=50,
+                index_storage_path=tmp_path, document_split_chunk_overlap=50
             )
 
         # Assert
@@ -375,42 +360,41 @@ class TestBuildDocumentsIndex:
         # Act & Assert
         with pytest.raises(Exception, match="Unsupported embedding model"):
             await build_documents_index(
-                index_storage_dir=tmp_path,
-                input_data_directory="/data",
-                input_data_files=None,
-                document_split_chunk_size=512,
+                index_storage_path=tmp_path,
                 document_split_chunk_overlap=50,
+                input_data_files=None,
             )
 
     @pytest.mark.asyncio
-    @patch("nzambe.helpers.data_processing.Settings")
+    @patch("nzambe.helpers.data_processing.get_document_split_chunk_size")
     @patch("nzambe.helpers.data_processing.SimpleDirectoryReader")
     @patch("nzambe.helpers.data_processing.from_documents_to_nodes")
     async def test_build_documents_index_creates_new_index(
-        self, mock_from_docs, mock_reader_class, mock_settings, tmp_path
+        self,
+        mock_from_docs,
+        mock_reader_class,
+        mock_document_split,
+        tmp_path,
     ):
         """Test creating a new index from scratch."""
         # Setup
-        embed_model = Mock(spec=OllamaEmbedding, model_name="test-model")
-        embed_model.get_text_embedding_batch.return_value = [
+        Settings.embed_model.get_text_embedding_batch.return_value = [  # type: ignore
             np.random.rand(5),
             np.random.rand(5),
         ]
-        mock_settings.embed_model = embed_model
 
         mock_reader = Mock()
         mock_reader.load_data.return_value = [Mock(name="doc1"), Mock(name="doc2")]
         mock_reader_class.return_value = mock_reader
 
         mock_from_docs.return_value = [TextNode(text="node1"), TextNode(text="node2")]
+        mock_document_split.return_value = 512
 
         index_dir = tmp_path
         # Act
         result = await build_documents_index(
-            index_storage_dir=index_dir,
-            input_data_directory="/data",
-            input_data_files=None,
-            document_split_chunk_size=512,
+            index_storage_path=index_dir,
+            input_data_files=[],
             document_split_chunk_overlap=50,
         )
 
@@ -424,78 +408,76 @@ class TestBuildDocumentsIndex:
         with open(index_dir / "nzambe_metadata.json", "r") as f:
             metadata = json.load(f)
 
-        assert metadata["embed_model_name"] == mock_settings.embed_model.model_name
-        assert metadata["platform"] == "ollama"
+        assert (
+            metadata["embedding_model_conf"]["name"] == Settings.embed_model.model_name
+        )
+        assert metadata["embedding_model_conf"]["platform"] == "ollama"
 
         # check index was written
         assert len(list(index_dir.glob("*store.json"))) > 0
 
     @pytest.mark.asyncio
-    @patch("nzambe.helpers.data_processing.Settings")
+    @patch("nzambe.helpers.data_processing.get_document_split_chunk_size")
     @patch("nzambe.helpers.data_processing.SimpleDirectoryReader")
     @patch("nzambe.helpers.data_processing.from_documents_to_nodes")
     async def test_build_documents_index_with_input_files(
         self,
         mock_from_docs,
         mock_reader_class,
-        mock_settings,
+        mock_document_split_chunk_size,
         tmp_path,
     ):
         """Test creating an index with specific input files."""
         # Setup
-        embed_model = Mock(spec=OllamaEmbedding, model_name="test-model")
-        embed_model.get_text_embedding_batch.return_value = [np.random.rand(5)]
-        mock_settings.embed_model = embed_model
+        Settings.embed_model.get_text_embedding_batch.return_value = [np.random.rand(5)]  # type: ignore
 
         mock_reader = Mock()
         mock_reader.load_data.return_value = [Mock(name="doc1")]
         mock_reader_class.return_value = mock_reader
 
         mock_from_docs.return_value = [TextNode(text="node1")]
-        input_files = [tmp_path / "file1.txt", tmp_path / "file2.txt"]
+        input_files = [str(tmp_path / "file1.txt"), str(tmp_path / "file2.txt")]
+        mock_document_split_chunk_size.return_value = 512
 
         # Act
         _ = await build_documents_index(
-            index_storage_dir=tmp_path,
-            input_data_directory=None,
+            index_storage_path=tmp_path,
             input_data_files=input_files,
-            document_split_chunk_size=512,
             document_split_chunk_overlap=50,
         )
 
         # Assert
         mock_reader_class.assert_called_once_with(
-            input_dir=None,
-            input_files=input_files,
-            exclude_hidden=False,
+            input_files=input_files, exclude_hidden=False
         )
 
     @pytest.mark.asyncio
-    @patch("nzambe.helpers.data_processing.Settings")
+    @patch("nzambe.helpers.data_processing.get_document_split_chunk_size")
     @patch("nzambe.helpers.data_processing.SimpleDirectoryReader")
     @patch("nzambe.helpers.data_processing.from_documents_to_nodes")
     async def test_build_documents_index_with_multiprocessing(
-        self, mock_from_docs, mock_reader_class, mock_settings, tmp_path
+        self,
+        mock_from_docs,
+        mock_reader_class,
+        mock_document_split_chunk_size,
+        tmp_path,
     ):
         """Test creating index with multiprocessing."""
         # Setup
-        mock_embed_model = Mock(spec=OllamaEmbedding, model_name="test-model")
-        mock_embed_model.get_text_embedding_batch.return_value = [np.random.rand(5)]
-        mock_settings.embed_model = mock_embed_model
+        Settings.embed_model.get_text_embedding_batch.return_value = [np.random.rand(5)]  # type: ignore
 
         mock_reader = Mock()
         mock_reader.load_data.return_value = [Mock(name="doc1")]
         mock_reader_class.return_value = mock_reader
 
         mock_from_docs.return_value = [TextNode(text="node1")]
+        mock_document_split_chunk_size.return_value = 512
 
         # Act
         num_workers = 4
         _ = await build_documents_index(
-            index_storage_dir=tmp_path,
-            input_data_directory=str(tmp_path / "data"),
-            input_data_files=None,
-            document_split_chunk_size=512,
+            index_storage_path=tmp_path,
+            input_data_files=[],
             document_split_chunk_overlap=50,
             num_workers=num_workers,
         )

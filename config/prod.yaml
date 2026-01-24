@@ -3,8 +3,13 @@
 
 # Example: Use larger models and batch sizes for production
 llm:
-  # model_name: "llama3.1:8b"  # Uncomment to use larger model in prod
-  embed_batch_size: 20
+  query_model:
+    platform: "openai"
+    name: "gpt-5-nano-2025-08-07"
+  embedding_model:
+    name: "text-embedding-3-small"
+    platform: "openai"
+    tokenizer: "cl100k_base"
 
 index:
   insert_batch_size: 4096

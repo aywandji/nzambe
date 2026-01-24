@@ -23,7 +23,7 @@ jobs:
         run: |
           python -m pip install --upgrade uv
           uv sync --group lint --group test
-      - name: Run pre-commit
+      - name: check formatting and typing
         run: |
           uv run pre-commit run --all-files
       - name: Test with pytest

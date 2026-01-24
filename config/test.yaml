@@ -1,4 +1,7 @@
 llm:
+  query_model:
+    platform: "ollama"
+    name: "gemma3:1b-it-qat"
   embedding_model:
     name: "nomic-embed-text:137m-v1.5-fp16"
     platform: "ollama"

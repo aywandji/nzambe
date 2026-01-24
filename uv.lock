@@ -3026,6 +3026,7 @@ dev = [
 lint = [
     { name = "pre-commit" },
     { name = "ruff" },
+    { name = "ty" },
 ]
 test = [
     { name = "pytest" },
@@ -3058,6 +3059,7 @@ dev = [
 lint = [
     { name = "pre-commit", specifier = ">=4.5.0" },
     { name = "ruff", specifier = ">=0.14.4" },
+    { name = "ty", specifier = ">=0.0.1a29" },
 ]
 test = [{ name = "pytest", specifier = ">=9.0.1" }]
 
