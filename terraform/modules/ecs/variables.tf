@@ -105,12 +105,6 @@ variable "s3_bucket_arn" {
 }
 
 # Auto-scaling variables
-variable "enable_autoscaling" {
-  description = "Enable auto-scaling for the ECS service"
-  type        = bool
-  default     = false
-}
-
 variable "min_capacity" {
   description = "Minimum number of tasks"
   type        = number
