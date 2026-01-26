@@ -274,9 +274,9 @@ resource "aws_ecs_service" "main" {
   #   minimum_healthy_percent = 100
   # }
 
-  # Ignore desired_count changes if auto-scaling is enabled
+  # Ignore desired_count changes since autoscaling manages it
   lifecycle {
-    ignore_changes = var.enable_autoscaling ? [desired_count] : []
+    ignore_changes = [desired_count]
   }
 
   tags = {
@@ -291,10 +291,9 @@ resource "aws_ecs_service" "main" {
 }
 
 #####################################
-# Auto Scaling (Optional - for Production)
+# Auto Scaling
 #####################################
 resource "aws_appautoscaling_target" "ecs" {
-  count              = var.enable_autoscaling ? 1 : 0
   max_capacity       = var.max_capacity
   min_capacity       = var.min_capacity
   resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.main.name}"
@@ -303,12 +302,11 @@ resource "aws_appautoscaling_target" "ecs" {
 }
 
 resource "aws_appautoscaling_policy" "ecs_cpu" {
-  count              = var.enable_autoscaling ? 1 : 0
   name               = "${var.name_prefix}-cpu-autoscaling"
   policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.ecs[0].resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs[0].scalable_dimension
-  service_namespace  = aws_appautoscaling_target.ecs[0].service_namespace
+  resource_id        = aws_appautoscaling_target.ecs.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs.service_namespace
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
@@ -321,12 +319,11 @@ resource "aws_appautoscaling_policy" "ecs_cpu" {
 }
 
 resource "aws_appautoscaling_policy" "ecs_memory" {
-  count              = var.enable_autoscaling ? 1 : 0
   name               = "${var.name_prefix}-memory-autoscaling"
   policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.ecs[0].resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs[0].scalable_dimension
-  service_namespace  = aws_appautoscaling_target.ecs[0].service_namespace
+  resource_id        = aws_appautoscaling_target.ecs.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs.service_namespace
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {

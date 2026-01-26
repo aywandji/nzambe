@@ -98,5 +98,5 @@ variable "additional_env_vars" {
     name  = string
     value = string
   }))
-  default = []
+  default = [{ "name" : "NZAMBE_ENV", "value" : "staging" }]
 }

@@ -1,0 +1,102 @@
+name: Deploy to ECS with Terraform
+
+on:
+  # Trigger after successful Docker build
+  workflow_run:
+    workflows: ["build_and_push_docker_images"]
+    types:
+      - completed
+    branches: ["main"]
+
+  # Also trigger on Terraform-only changes
+  push:
+    branches: ["main"]
+    paths:
+      - 'terraform/**'
+      - '!terraform/**/*.md'
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Only run if workflow_run was successful, or if it's a direct push
+    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+#      # Sync GitHub secrets to AWS Secrets Manager
+#      - name: Update AWS Secrets Manager
+#        run: |
+#          aws secretsmanager put-secret-value \
+#            --secret-id nzambe-staging-langfuse-secret-key \
+#            --secret-string "${{ secrets.LANGFUSE_SECRET_KEY }}"
+#
+#          aws secretsmanager put-secret-value \
+#            --secret-id nzambe-staging-langfuse-public-key \
+#            --secret-string "${{ secrets.LANGFUSE_PUBLIC_KEY }}"
+#
+#          aws secretsmanager put-secret-value \
+#            --secret-id nzambe-staging-langfuse-base-url \
+#            --secret-string "${{ secrets.LANGFUSE_BASE_URL }}"
+#
+#          aws secretsmanager put-secret-value \
+#            --secret-id nzambe-staging-openai-api-key \
+#            --secret-string "${{ secrets.OPENAI_API_KEY }}"
+#
+#          echo "✅ AWS Secrets Manager updated successfully"
+
+      # Setup Terraform
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+
+      # Determine which image tag to use
+      - name: Determine image tag
+        id: image-tag
+        run: |
+          cd terraform/envs/staging
+
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            # Docker was built, use the tag from the build workflow output
+            IMAGE_TAG="${{ github.event.workflow_run.outputs.image_tag }}"
+            echo "Using newly built image tag from workflow: $IMAGE_TAG"
+          else
+            # Only Terraform changed, get current image tag from Terraform state
+            echo "Fetching current image tag from Terraform state..."
+
+            terraform init > /dev/null
+            CURRENT_TAG=$(terraform output -raw current_image_tag 2>/dev/null || echo "")
+
+            if [ -z "$CURRENT_TAG" ] || [ "$CURRENT_TAG" == "null" ]; then
+              echo "❌ Error: No existing deployment found in Terraform state."
+              echo "Cannot apply Terraform changes without a known image tag."
+              echo "Please deploy an image first using the build workflow."
+              exit 1
+            fi
+
+            IMAGE_TAG="$CURRENT_TAG"
+            echo "Using current deployed image tag: $IMAGE_TAG"
+          fi
+
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      # Deploy with Terraform
+      - name: Deploy to ECS
+        run: |
+          cd terraform/envs/staging
+          terraform apply -auto-approve \
+            -var="image_tag=${{ steps.image-tag.outputs.image_tag }}"
+
+          echo "✅ Deployed with image tag: ${{ steps.image-tag.outputs.image_tag }}"

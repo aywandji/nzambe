@@ -42,6 +42,16 @@ resource "aws_secretsmanager_secret" "langfuse_base_url" {
   }
 }
 
+resource "aws_secretsmanager_secret" "openai_api_key" {
+  name        = "${var.project_name}-${var.environment}-openai-api-key"
+  description = "Openai api key for ${var.environment}"
+
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-openai-api-key"
+    Environment = var.environment
+  }
+}
+
 # Note: Secret values must be set manually via AWS Console or CLI
 # Example: aws secretsmanager put-secret-value --secret-id <secret-name> --secret-string "your-value"
 
@@ -51,11 +61,11 @@ resource "aws_secretsmanager_secret" "langfuse_base_url" {
 module "vpc" {
   source = "../../modules/vpc"
 
-  name_prefix        = "${var.project_name}-${var.environment}"
-  environment        = var.environment
-  vpc_cidr           = var.vpc_cidr
-  az_count           = var.az_count
-  nat_gateway_count  = var.nat_gateway_count
+  name_prefix       = "${var.project_name}-${var.environment}"
+  environment       = var.environment
+  vpc_cidr          = var.vpc_cidr
+  az_count          = var.az_count
+  nat_gateway_count = var.nat_gateway_count
 }
 
 #####################################
@@ -64,12 +74,12 @@ module "vpc" {
 module "alb" {
   source = "../../modules/alb"
 
-  name_prefix           = "${var.project_name}-${var.environment}"
-  environment           = var.environment
-  vpc_id                = module.vpc.vpc_id
-  public_subnet_ids     = module.vpc.public_subnet_ids
-  target_port           = var.container_port
-  health_check_path     = var.health_check_path
+  name_prefix                = "${var.project_name}-${var.environment}"
+  environment                = var.environment
+  vpc_id                     = module.vpc.vpc_id
+  public_subnet_ids          = module.vpc.public_subnet_ids
+  target_port                = var.container_port
+  health_check_path          = var.health_check_path
   enable_deletion_protection = var.alb_deletion_protection
 }
 
@@ -79,28 +89,29 @@ module "alb" {
 module "ecs" {
   source = "../../modules/ecs"
 
-  name_prefix            = "${var.project_name}-${var.environment}"
-  environment            = var.environment
-  vpc_id                 = module.vpc.vpc_id
-  private_subnet_ids     = module.vpc.private_subnet_ids
-  alb_security_group_id  = module.alb.alb_security_group_id
-  target_group_arn       = module.alb.target_group_arn
-  aws_region             = var.aws_region
+  name_prefix           = "${var.project_name}-${var.environment}"
+  environment           = var.environment
+  vpc_id                = module.vpc.vpc_id
+  private_subnet_ids    = module.vpc.private_subnet_ids
+  alb_security_group_id = module.alb.alb_security_group_id
+  target_group_arn      = module.alb.target_group_arn
+  aws_region            = var.aws_region
 
-  container_name         = var.container_name
-  container_image        = "${data.aws_ecr_repository.app.repository_url}:${var.image_tag}"
-  container_port         = var.container_port
+  container_name  = var.container_name
+  container_image = "${data.aws_ecr_repository.app.repository_url}:${var.image_tag}"
+  container_port  = var.container_port
 
-  task_cpu               = var.task_cpu
-  task_memory            = var.task_memory
-  desired_count          = var.desired_count
-  log_retention_days     = var.log_retention_days
+  task_cpu           = var.task_cpu
+  task_memory        = var.task_memory
+  desired_count      = var.desired_count
+  log_retention_days = var.log_retention_days
 
   # Secrets configuration
   secrets_arns = [
     aws_secretsmanager_secret.langfuse_secret_key.arn,
     aws_secretsmanager_secret.langfuse_public_key.arn,
     aws_secretsmanager_secret.langfuse_base_url.arn,
+    aws_secretsmanager_secret.openai_api_key.arn,
   ]
 
   secrets_env_vars = [
@@ -115,15 +126,20 @@ module "ecs" {
     {
       name      = "LANGFUSE_BASE_URL"
       valueFrom = aws_secretsmanager_secret.langfuse_base_url.arn
+    },
+    {
+      name      = "OPENAI_API_KEY"
+      valueFrom = aws_secretsmanager_secret.openai_api_key.arn
     }
   ]
 
   environment_variables = var.additional_env_vars # for non-sensitive env vars.
 
-  # Auto-scaling disabled for staging
-  enable_autoscaling = false
+  # Auto-scaling configuration
+  min_capacity = 1
+  max_capacity = 3
 
   # Capacity provider - 100% Fargate Spot for staging (cost savings)
-  enable_fargate_spot  = true
-  fargate_spot_weight  = 100
+  enable_fargate_spot = true
+  fargate_spot_weight = 100
 }
