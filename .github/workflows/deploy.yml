@@ -27,7 +27,7 @@ permissions:
   actions: read
 
 jobs:
-  check-build:
+  skip-deploy:
     runs-on: ubuntu-latest
     outputs:
       skip: ${{ steps.check.outputs.skip }}
@@ -53,9 +53,9 @@ jobs:
           fi
   deploy:
     runs-on: ubuntu-latest
-    needs: check-build
+    needs: skip-deploy
     # Only run if workflow_run was successful, or if it's a direct push
-    if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name != 'workflow_run' && needs.check-build.outputs.skip != 'true') }}
+    if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name != 'workflow_run' && needs.skip-deploy.outputs.skip != 'true') }}
     steps:
       - uses: actions/checkout@v3
 
@@ -66,26 +66,26 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-#      # Sync GitHub secrets to AWS Secrets Manager
-#      - name: Update AWS Secrets Manager
-#        run: |
-#          aws secretsmanager put-secret-value \
-#            --secret-id nzambe-staging-langfuse-secret-key \
-#            --secret-string "${{ secrets.LANGFUSE_SECRET_KEY }}"
-#
-#          aws secretsmanager put-secret-value \
-#            --secret-id nzambe-staging-langfuse-public-key \
-#            --secret-string "${{ secrets.LANGFUSE_PUBLIC_KEY }}"
-#
-#          aws secretsmanager put-secret-value \
-#            --secret-id nzambe-staging-langfuse-base-url \
-#            --secret-string "${{ secrets.LANGFUSE_BASE_URL }}"
-#
-#          aws secretsmanager put-secret-value \
-#            --secret-id nzambe-staging-openai-api-key \
-#            --secret-string "${{ secrets.OPENAI_API_KEY }}"
-#
-#          echo "✅ AWS Secrets Manager updated successfully"
+      # Sync GitHub secrets to AWS Secrets Manager
+      - name: Update AWS Secrets Manager
+        run: |
+          aws secretsmanager put-secret-value \
+            --secret-id nzambe-staging-langfuse-secret-key \
+            --secret-string "${{ secrets.LANGFUSE_SECRET_KEY }}"
+
+          aws secretsmanager put-secret-value \
+            --secret-id nzambe-staging-langfuse-public-key \
+            --secret-string "${{ secrets.LANGFUSE_PUBLIC_KEY }}"
+
+          aws secretsmanager put-secret-value \
+            --secret-id nzambe-staging-langfuse-base-url \
+            --secret-string "${{ secrets.LANGFUSE_BASE_URL }}"
+
+          aws secretsmanager put-secret-value \
+            --secret-id nzambe-staging-openai-api-key \
+            --secret-string "${{ secrets.OPENAI_API_KEY }}"
+
+          echo "✅ AWS Secrets Manager updated successfully"
 
       # Setup Terraform
       - name: Setup Terraform
