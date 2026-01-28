@@ -9,6 +9,10 @@ data "aws_ecr_repository" "app" {
   name = "${var.project_name}-ecr-repo"
 }
 
+# Data sources to get global S3 buckets
+data "aws_s3_bucket" "rag_documents" {
+  bucket = "${var.project_name}-rag-documents"
+}
 #####################################
 # Secrets Manager - Application Secrets
 #####################################
@@ -98,7 +102,7 @@ module "ecs" {
   aws_region            = var.aws_region
 
   container_name  = var.container_name
-  container_image = "${data.aws_ecr_repository.app.repository_url}:${var.image_tag}"
+  container_image = "${data.aws_ecr_repository.app.repository_url}:${var.rag_server_image_tag}"
   container_port  = var.container_port
 
   task_cpu           = var.task_cpu
@@ -133,13 +137,88 @@ module "ecs" {
     }
   ]
 
-  environment_variables = var.additional_env_vars # for non-sensitive env vars.
+  environment_variables = concat([
+    {
+      name  = "S3_VECTORS_BUCKET_ARN"
+      value = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_arn
+    },
+    {
+      name  = "S3_VECTORS_INDEX_ARN"
+      value = aws_s3vectors_index.vector_index.index_arn
+    },
+    {
+      name  = "S3_VECTORS_INDEX_DATA_TYPE"
+      value = aws_s3vectors_index.vector_index.data_type
+    },
+    {
+      name  = "S3_VECTORS_INDEX_DISTANCE_METRIC"
+      value = aws_s3vectors_index.vector_index.distance_metric
+    },
+    {
+      name  = "NZAMBE_ENV"
+      value = "staging"
+    }
+
+  ], var.additional_env_vars)
 
   # Auto-scaling configuration
   min_capacity = 1
   max_capacity = 3
 
   # Capacity provider - 100% Fargate Spot for staging (cost savings)
-  enable_fargate_spot = true
   fargate_spot_weight = 100
+
+  # S3 bucket for vector store access
+  s3_vector_store_bucket_arn = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_arn
+}
+
+
+#####################################
+# S3 Vectors Bucket for Vector Store
+#####################################
+resource "aws_s3vectors_vector_bucket" "s3vectors_bucket" {
+  vector_bucket_name = "${var.project_name}-${var.environment}-s3-vectors-storage"
+
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-s3-vectors-storage"
+    Purpose     = "Bucket for Vector index storage"
+    environment = var.environment
+  }
+}
+
+resource "aws_s3vectors_index" "vector_index" {
+  index_name         = "${var.project_name}-${var.environment}-s3-vectors-index"
+  vector_bucket_name = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_name
+
+  data_type       = var.vector_index_data_type
+  dimension       = 2
+  distance_metric = var.vector_index_distance_metric
+
+  tags = {
+    environment = var.environment
+  }
+}
+#####################################
+# Lambda Indexer Module
+#####################################
+module "lambda_indexer" {
+  source = "../../modules/lambda_indexer"
+
+  name_prefix                  = "${var.project_name}-${var.environment}"
+  environment                  = var.environment
+  lambda_image_uri             = "${data.aws_ecr_repository.app.repository_url}:${var.lambda_image_tag}"
+  source_bucket_name           = data.aws_s3_bucket.rag_documents.id
+  source_bucket_arn            = data.aws_s3_bucket.rag_documents.arn
+  vector_store_bucket_name     = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_name
+  vector_store_bucket_arn      = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_arn
+  s3vectors_index_arn          = aws_s3vectors_index.vector_index.index_arn
+  openai_secret_arn            = aws_secretsmanager_secret.openai_api_key.arn
+  timeout                      = 300
+  memory_size                  = 512
+  log_retention_days           = var.log_retention_days
+  chunk_size                   = var.vector_index_chunk_size
+  chunk_overlap                = var.vector_index_chunk_overlap
+  embedding_model              = var.vector_index_embedding_model
+  vector_index_data_type       = var.vector_index_data_type
+  vector_index_distance_metric = var.vector_index_distance_metric
 }

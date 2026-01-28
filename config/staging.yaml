@@ -13,11 +13,9 @@ llm:
 
 index:
   insert_batch_size: 1024
+  type: "s3vectors_index"
 
 query_engine:
   similarity_top_k: 2
 
 eval: null
-# Add staging-specific data paths if needed
-# data:
-#   folder_path: "/opt/nzambe/data/bible"

@@ -10,10 +10,21 @@ on:
       - 'uv.lock'
       - '!src/nzambe/cli.py'
       - 'config/**'
+      - 'lambda/**'
+      - '!lambda/docker-compose.yml'
     tags:
       - '*'
 
   workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Custom tag for project image (optional)'
+        required: false
+        type: string
+      lambda_tag:
+        description: 'Custom tag for Lambda image (optional)'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -30,16 +41,15 @@ jobs:
       - name: Set image tag
         id: set-tag
         run: |
-          if [ "${{ github.ref_type }}" == "tag" ]; then
+          if [ -n "${{ inputs.image_tag }}" ]; then
+            # Use custom tag if provided via workflow_dispatch
+            echo "tag=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref_type }}" == "tag" ]; then
             # For tag pushes, use the tag name
             echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.event_name }}" == "push" ]; then
+          else
             # For push to main, use commit SHA
             echo "tag=sha-${{ github.sha }}" >> $GITHUB_OUTPUT
-          else
-            # For PRs and manual runs, use branch name
-            TAG=$(echo "${{ github.head_ref || github.ref_name }}" | sed 's/[^a-zA-Z0-9._-]/-/g')
-            echo "tag=${TAG}" >> $GITHUB_OUTPUT
           fi
 
       - name: Configure AWS credentials
@@ -66,3 +76,45 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "✅ Pushed image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
           echo "App version used: $IMAGE_TAG"
+
+  # Build the Lambda image
+  build-lambda:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.set-tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set Lambda image tag
+        id: set-tag
+        run: |
+          if [ -n "${{ inputs.lambda_tag }}" ]; then
+            # Use custom tag if provided via workflow_dispatch
+            echo "tag=lambda-${{ inputs.lambda_tag }}" >> $GITHUB_OUTPUT
+          else
+            # For push to main, use commit SHA
+            echo "tag=lambda-sha-${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Lambda image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: nzambe-ecr-repo
+          IMAGE_TAG: ${{ steps.set-tag.outputs.tag }}
+        run: |
+          docker build \
+            -f lambda/s3-indexer/Dockerfile \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "✅ Pushed Lambda image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
