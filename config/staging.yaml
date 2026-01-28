@@ -17,7 +17,7 @@ index:
 query_engine:
   similarity_top_k: 2
 
+data:
+  vector_store_bucket: "nzambe-s3-vectors-storage"
+
 eval: null
-# Add staging-specific data paths if needed
-# data:
-#   folder_path: "/opt/nzambe/data/bible"

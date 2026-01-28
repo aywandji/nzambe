@@ -98,8 +98,8 @@ variable "environment_variables" {
   default = []
 }
 
-variable "s3_bucket_arn" {
-  description = "ARN of S3 bucket for RAG document store (optional)"
+variable "s3_vector_store_bucket_arn" {
+  description = "ARN of S3 bucket for RAG document vector store"
   type        = string
   default     = ""
 }
@@ -118,12 +118,6 @@ variable "max_capacity" {
 }
 
 # Capacity Provider variables
-variable "enable_fargate_spot" {
-  description = "Enable FARGATE_SPOT for cost savings (may experience interruptions)"
-  type        = bool
-  default     = false
-}
-
 variable "fargate_spot_weight" {
   description = "Weight for FARGATE_SPOT when enabled (0-100). Higher values use more Spot capacity"
   type        = number

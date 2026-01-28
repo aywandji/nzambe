@@ -105,10 +105,10 @@ variable "log_retention_days" {
 }
 
 variable "additional_env_vars" {
-  description = "Additional environment variables for the container"
+  description = "Additional environment variables for the container (non sensitive)"
   type = list(object({
     name  = string
     value = string
   }))
-  default = [{ "name" : "NZAMBE_ENV", "value" : "prod" }]
+  default = []
 }

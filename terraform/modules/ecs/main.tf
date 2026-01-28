@@ -34,21 +34,18 @@ resource "aws_ecs_cluster" "main" {
 resource "aws_ecs_cluster_capacity_providers" "main" {
   cluster_name = aws_ecs_cluster.main.name
 
-  capacity_providers = var.enable_fargate_spot ? ["FARGATE", "FARGATE_SPOT"] : ["FARGATE"]
+  capacity_providers = ["FARGATE", "FARGATE_SPOT"]
 
   default_capacity_provider_strategy {
-    capacity_provider = var.enable_fargate_spot ? "FARGATE_SPOT" : "FARGATE"
-    weight            = var.enable_fargate_spot ? var.fargate_spot_weight : 100
-    base              = var.enable_fargate_spot ? 0 : 1
+    capacity_provider = "FARGATE_SPOT"
+    weight            = var.fargate_spot_weight
+    base              = 1
   }
 
-  dynamic "default_capacity_provider_strategy" {
-    for_each = var.enable_fargate_spot ? [1] : []
-    content {
-      capacity_provider = "FARGATE"
-      weight            = 100 - var.fargate_spot_weight
-      base              = 1
-    }
+  default_capacity_provider_strategy {
+    capacity_provider = "FARGATE"
+    weight            = 100 - var.fargate_spot_weight
+    base              = 0
   }
 }
 
@@ -139,29 +136,29 @@ resource "aws_iam_role" "task" {
   }
 }
 
-# Optional: S3 access for RAG document store
-resource "aws_iam_role_policy" "task_s3_access" {
-  count = var.s3_bucket_arn != "" ? 1 : 0
-  name  = "${var.name_prefix}-task-s3-access"
-  role  = aws_iam_role.task.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetObject",
-          "s3:ListBucket"
-        ]
-        Resource = [
-          var.s3_bucket_arn,
-          "${var.s3_bucket_arn}/*"
-        ]
-      }
-    ]
-  })
-}
+# # Optional: S3 access for RAG document store
+# resource "aws_iam_role_policy" "task_s3_access" {
+#   # count = var.s3_vector_store_bucket_arn != "" ? 1 : 0
+#   name  = "${var.name_prefix}-task-s3-access"
+#   role  = aws_iam_role.task.id
+#
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           "s3:GetObject",
+#           "s3:ListBucket"
+#         ]
+#         Resource = [
+#           var.s3_vector_store_bucket_arn,
+#           "${var.s3_vector_store_bucket_arn}/*"
+#         ]
+#       }
+#     ]
+#   })
+# }
 
 #####################################
 # Security Group - ECS Tasks
@@ -256,6 +253,8 @@ resource "aws_ecs_service" "main" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = var.desired_count
+
+  force_new_deployment = true
 
   network_configuration {
     subnets          = var.private_subnet_ids
