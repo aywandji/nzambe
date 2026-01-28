@@ -5,7 +5,7 @@ Uses Pydantic Settings with YAML configuration files and environment variable ov
 
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, Field, field_validator
@@ -67,12 +67,23 @@ class LLMConfig(BaseModel):
 class IndexConfig(BaseModel):
     """Vector index configuration."""
 
+    type: Literal["memory", "s3vectors_index"] = "memory"
     chunk_overlap: int = 120
     paragraph_separator: str = "\n\n"
     insert_batch_size: int = 2048
-
-    # chunk_size is computed dynamically from embedding model max_length
-    # so it's not included here as a configurable parameter
+    # remote index configuration
+    s3vectors_bucket_arn: str | None = Field(
+        default=None, validation_alias="S3_VECTORS_BUCKET_ARN"
+    )
+    s3vectors_index_arn: str | None = Field(
+        default=None, validation_alias="S3_VECTORS_INDEX_ARN"
+    )
+    s3vectors_index_data_type: str | None = Field(
+        default=None, validation_alias="S3_VECTORS_INDEX_DATA_TYPE"
+    )
+    s3vectors_index_distance_metric: str | None = Field(
+        default=None, validation_alias="S3_VECTORS_INDEX_DISTANCE_METRIC"
+    )
 
 
 class QueryEngineConfig(BaseModel):
@@ -125,9 +136,10 @@ class NzambeSettings(BaseSettings):
         env_nested_delimiter="__",  # Allows overrides like NZAMBE__LLM__MODEL_NAME
         case_sensitive=False,
         extra="ignore",
+        populate_by_name=True,
     )
 
-    env: str = Field(alias="NZAMBE_ENV")
+    env: str = Field(validation_alias="NZAMBE_ENV")
 
     # Nested configuration groups
     llm: LLMConfig

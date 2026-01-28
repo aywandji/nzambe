@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Depends, Request
+from llama_index.core import VectorStoreIndex
 from llama_index.core.postprocessor import SimilarityPostprocessor
 from llama_index.core.prompts import RichPromptTemplate
 from llama_index.core.prompts.default_prompts import (
@@ -12,6 +13,7 @@ from llama_index.core.prompts.default_prompts import (
 )
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.schema import NodeWithScore, QueryBundle
+from llama_index.vector_stores.s3 import S3VectorStore
 from pydantic import BaseModel
 
 from nzambe import __version__
@@ -80,7 +82,8 @@ async def lifespan(app: FastAPI):
     logger.info(f"Using embedding model: {nzambe_settings.llm.embedding_model}")
     logger.info(f"Using LLM: {nzambe_settings.llm.query_model.name}")
 
-    if nzambe_settings.env in ("local", "test"):
+    if nzambe_settings.index.type == "memory":
+        # Local/test environment: Build index from local files
         data_folder_path = Path(nzambe_settings.data.folder_path)
         index_dir_name = f"documents_index_{str(nzambe_settings.llm.embedding_model.name).replace('/', '--')}"
         index_storage_path = data_folder_path / index_dir_name.replace(":", "--")
@@ -94,25 +97,48 @@ async def lifespan(app: FastAPI):
             insert_batch_size=nzambe_settings.index.insert_batch_size,
             input_data_files=input_data_files,
         )
-        # Create a query engine
-        node_postprocessors = []
-        if nzambe_settings.query_engine.similarity_cutoff is not None:
-            node_postprocessors.append(
-                SimilarityPostprocessor(
-                    similarity_cutoff=nzambe_settings.query_engine.similarity_cutoff
-                )
+    elif nzambe_settings.index.type == "s3vectors_index":
+        if not nzambe_settings.index.s3vectors_bucket_arn:
+            raise RuntimeError("s3vectors_bucket_arn must be set in the config")
+        if not nzambe_settings.index.s3vectors_index_arn:
+            raise RuntimeError("s3vectors_index_arn must be set in the config")
+        if not nzambe_settings.index.s3vectors_index_data_type:
+            raise RuntimeError("s3vectors_index_data_type must be set in the config")
+        if not nzambe_settings.index.s3vectors_index_distance_metric:
+            raise RuntimeError(
+                "s3vectors_index_distance_metric must be set in the config"
             )
 
-        app.state.query_engine = index.as_query_engine(
-            similarity_top_k=nzambe_settings.query_engine.similarity_top_k,
-            response_mode=nzambe_settings.query_engine.response_mode,
-            node_postprocessors=node_postprocessors,
-            text_qa_template=custom_qa_prompt or DEFAULT_TEXT_QA_PROMPT,
-            refine_template=custom_refine_prompt or DEFAULT_REFINE_PROMPT,
+        # Connect to the remote index
+        vector_store = S3VectorStore(
+            index_name_or_arn=nzambe_settings.index.s3vectors_index_arn,
+            bucket_name_or_arn=nzambe_settings.index.s3vectors_bucket_arn,
+            data_type=nzambe_settings.index.s3vectors_index_data_type,
+            distance_metric=nzambe_settings.index.s3vectors_index_distance_metric,
         )
-        logger.info("Server initialization complete. Ready to accept requests.")
+        index = VectorStoreIndex.from_vector_store(vector_store=vector_store)
+        logger.info("Successfully connected to s3vectors index")
     else:
-        logger.error("Server started without index. No request will be processed.")
+        logger.error(f"Unknown index type: {nzambe_settings.index.type}")
+        raise RuntimeError("Server cannot start with unknown index type")
+
+    # Create a query engine
+    node_postprocessors = []
+    if nzambe_settings.query_engine.similarity_cutoff is not None:
+        node_postprocessors.append(
+            SimilarityPostprocessor(
+                similarity_cutoff=nzambe_settings.query_engine.similarity_cutoff
+            )
+        )
+
+    app.state.query_engine = index.as_query_engine(
+        similarity_top_k=nzambe_settings.query_engine.similarity_top_k,
+        response_mode=nzambe_settings.query_engine.response_mode,
+        node_postprocessors=node_postprocessors,
+        text_qa_template=custom_qa_prompt or DEFAULT_TEXT_QA_PROMPT,
+        refine_template=custom_refine_prompt or DEFAULT_REFINE_PROMPT,
+    )
+    logger.info("Server initialization complete. Ready to accept requests.")
 
     yield
 
@@ -146,11 +172,6 @@ async def query(
     """
     Query endpoint to ask questions to the RAG system.
     """
-    if query_engine is None:
-        raise HTTPException(
-            status_code=503, detail="Query engine not initialized. Server starting up."
-        )
-
     try:
         logger.info(f"Received query: {request.question}")
         response = await query_engine.aquery(request.question)

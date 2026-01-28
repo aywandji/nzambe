@@ -15,10 +15,14 @@ on:
       - 'terraform/**'
       - '!terraform/**/*.md'
 
-  workflow_dispatch: # useful to deploy manually using a custom image tag
+  workflow_dispatch: # useful to deploy manually using custom image tags
     inputs:
       image_tag:
-        description: "Optional custom image tag for manual deploy"
+        description: "Optional custom project image tag for manual deploy"
+        required: false
+        type: string
+      lambda_tag:
+        description: "Optional custom Lambda image tag for manual deploy"
         required: false
         type: string
 
@@ -94,38 +98,55 @@ jobs:
         with:
           terraform_wrapper: false
 
-      # Determine which image tag to use
-      - name: Determine image tag
-        id: image-tag
+      # Determine which image tags to use (project and Lambda)
+      - name: Determine image tags
+        id: image-tags
         run: |
           cd terraform/envs/staging
+          terraform init > /dev/null
 
+          # Determine PROJECT image tag
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ inputs.image_tag }}" ]]; then
-            IMAGE_TAG="${{ inputs.image_tag }}"
-            echo "Using manually provided image tag: $IMAGE_TAG"
+            PROJECT_TAG="${{ inputs.image_tag }}"
+            echo "Using manually provided project image tag: $PROJECT_TAG"
           elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
-            # Docker was built, use the tag from the build workflow output
-            IMAGE_TAG="${{ github.event.workflow_run.outputs.image_tag }}"
-            echo "Using newly built image tag from workflow: $IMAGE_TAG"
+            # Get the build-project job output from the workflow_run event
+            PROJECT_TAG="sha-${{ github.event.workflow_run.head_sha }}"
+            echo "Using newly built project image tag: $PROJECT_TAG"
           else
-            # Only Terraform changed, get current image tag from Terraform state
-            echo "Fetching current image tag from Terraform state..."
-
-            terraform init > /dev/null
-            CURRENT_TAG=$(terraform output -raw current_image_tag 2>/dev/null || echo "")
-
+            # Terraform-only changes, get current tag from state
+            echo "Fetching current project image tag from Terraform state..."
+            CURRENT_TAG=$(terraform output -raw current_rag_server_image_tag 2>/dev/null || echo "")
             if [ -z "$CURRENT_TAG" ] || [ "$CURRENT_TAG" == "null" ]; then
-              echo "❌ Error: No existing deployment found in Terraform state."
-              echo "Cannot apply Terraform changes without a known image tag."
-              echo "Please deploy an image first using the build workflow."
+              echo "❌ Error: No existing project image deployment found."
               exit 1
             fi
-
-            IMAGE_TAG="$CURRENT_TAG"
-            echo "Using current deployed image tag: $IMAGE_TAG"
+            PROJECT_TAG="$CURRENT_TAG"
+            echo "Using current deployed project image tag: $PROJECT_TAG"
           fi
 
-          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+          # Determine LAMBDA image tag
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ inputs.lambda_tag }}" ]]; then
+            LAMBDA_TAG="lambda-${{ inputs.lambda_tag }}"
+            echo "Using manually provided Lambda image tag: $LAMBDA_TAG"
+          elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            # Get the build-lambda job output from the workflow_run event
+            LAMBDA_TAG="lambda-sha-${{ github.event.workflow_run.head_sha }}"
+            echo "Using newly built Lambda image tag: $LAMBDA_TAG"
+          else
+            # Terraform-only changes, get current tag from state
+            echo "Fetching current Lambda image tag from Terraform state..."
+            CURRENT_LAMBDA_TAG=$(terraform output -raw current_lambda_image_tag 2>/dev/null || echo "")
+            if [ -z "$CURRENT_LAMBDA_TAG" ] || [ "$CURRENT_LAMBDA_TAG" == "null" ]; then
+              echo "❌ Error: No existing Lambda image deployment found."
+              exit 1
+            fi
+            LAMBDA_TAG="$CURRENT_LAMBDA_TAG"
+            echo "Using current deployed Lambda image tag: $LAMBDA_TAG"
+          fi
+
+          echo "project_tag=$PROJECT_TAG" >> $GITHUB_OUTPUT
+          echo "lambda_tag=$LAMBDA_TAG" >> $GITHUB_OUTPUT
 
       # Deploy with Terraform
       - name: Deploy to ECS
@@ -133,6 +154,9 @@ jobs:
           cd terraform/envs/staging
           terraform init > /dev/null
           terraform apply -auto-approve \
-            -var="image_tag=${{ steps.image-tag.outputs.image_tag }}"
+            -var="rag_server_image_tag=${{ steps.image-tags.outputs.project_tag }}" \
+            -var="lambda_image_tag=${{ steps.image-tags.outputs.lambda_tag }}"
 
-          echo "✅ Deployed with image tag: ${{ steps.image-tag.outputs.image_tag }}"
+          echo "✅ Deployed with image tags:"
+          echo "  - Project: ${{ steps.image-tags.outputs.project_tag }}"
+          echo "  - Lambda: ${{ steps.image-tags.outputs.lambda_tag }}"
