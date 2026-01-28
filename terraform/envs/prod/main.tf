@@ -133,13 +133,34 @@ module "ecs" {
     }
   ]
 
-  environment_variables = var.additional_env_vars
+  environment_variables = concat([
+    # {
+    #   name = "S3_VECTORS_BUCKET_ARN"
+    #   value = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_arn
+    # },
+    #  {
+    #   name = "S3_VECTORS_INDEX_ARN"
+    #   value = aws_s3vectors_index.vector_index.index_arn
+    # },
+    #  {
+    #   name = "S3_VECTORS_INDEX_DATA_TYPE"
+    #   value = aws_s3vectors_index.vector_index.data_type
+    # },
+    #  {
+    #   name = "S3_VECTORS_INDEX_DISTANCE_METRIC"
+    #   value = aws_s3vectors_index.vector_index.distance_metric
+    # },
+    {
+      name  = "NZAMBE_ENV"
+      value = "prod"
+    }
+
+  ], var.additional_env_vars)
 
   # Auto-scaling configuration
   min_capacity = var.min_capacity
   max_capacity = var.max_capacity
 
   # Capacity provider - 30% Fargate Spot for prod (balance cost and reliability)
-  enable_fargate_spot = true
   fargate_spot_weight = 30
 }

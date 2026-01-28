@@ -49,3 +49,13 @@ output "current_image_tag" {
   description = "Currently deployed image tag (from last terraform apply)"
   value       = var.image_tag
 }
+
+output "vector_store_bucket_name" {
+  description = "Name of the S3 vectors bucket for vector index storage"
+  value       = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_name
+}
+
+output "vector_store_bucket_arn" {
+  description = "ARN of the S3 vectors bucket for vector index storage"
+  value       = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_arn
+}

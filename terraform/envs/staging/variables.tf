@@ -67,6 +67,12 @@ variable "image_tag" {
   default     = "latest"
 }
 
+variable "lambda_image_tag" {
+  description = "Lambda Docker image tag to deploy"
+  type        = string
+  default     = "lambda-latest"
+}
+
 # Staging: 0.5 vCPU / 1GB RAM
 variable "task_cpu" {
   description = "CPU units for the task (512 = 0.5 vCPU)"
@@ -93,10 +99,40 @@ variable "log_retention_days" {
 }
 
 variable "additional_env_vars" {
-  description = "Additional environment variables for the container"
+  description = "Additional environment variables for the container (non sensitive)"
   type = list(object({
     name  = string
     value = string
   }))
-  default = [{ "name" : "NZAMBE_ENV", "value" : "staging" }]
+  default = []
+}
+
+variable "vector_index_chunk_size" {
+  description = "Chunk size for each document indexing"
+  type        = number
+  default     = 512
+}
+
+variable "vector_index_chunk_overlap" {
+  description = "Overlap size for each document indexing"
+  type        = number
+  default     = 120
+}
+
+variable "vector_index_embedding_model" {
+  description = "Embedding model for each document indexing"
+  type        = string
+  default     = "text-embedding-3-small"
+}
+
+variable "vector_index_distance_metric" {
+  description = "Distance metric for vector index"
+  type        = string
+  default     = "cosine"
+}
+
+variable "vector_index_data_type" {
+  description = "Data type for the vector index"
+  type        = string
+  default     = "float32"
 }
