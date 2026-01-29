@@ -113,8 +113,9 @@ jobs:
           ECR_REPOSITORY: nzambe-ecr-repo
           IMAGE_TAG: ${{ steps.set-tag.outputs.tag }}
         run: |
+          cd lambda/s3-indexer
           docker build \
-            -f lambda/s3-indexer/Dockerfile \
+            -f Dockerfile \
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "✅ Pushed Lambda image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
