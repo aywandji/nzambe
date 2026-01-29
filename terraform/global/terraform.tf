@@ -3,11 +3,11 @@ terraform {
   # State will be stored locally initially, then can be migrated to S3 after creation
 
   backend "s3" {
-    bucket         = "nzambe-terraform-state"
-    key            = "global/terraform.tfstate"
-    region         = "us-west-2"
-    dynamodb_table = "nzambe-terraform-locks"
-    encrypt        = true
+    bucket       = "nzambe-terraform-state"
+    key          = "global/terraform.tfstate"
+    region       = "us-west-2"
+    use_lockfile = true
+    encrypt      = true
   }
   required_providers {
     aws = {

@@ -3,11 +3,11 @@ terraform {
   # Then run: terraform init -migrate-state
 
   backend "s3" {
-    bucket         = "nzambe-terraform-state"
-    key            = "staging/terraform.tfstate"
-    region         = "us-west-2"
-    dynamodb_table = "nzambe-terraform-locks"
-    encrypt        = true
+    bucket       = "nzambe-terraform-state"
+    key          = "staging/terraform.tfstate"
+    region       = "us-west-2"
+    use_lockfile = true
+    encrypt      = true
   }
 
   required_providers {

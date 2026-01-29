@@ -30,8 +30,33 @@ permissions:
   contents: read
 
 jobs:
+  # Detect which files changed
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      project: ${{ steps.filter.outputs.project }}
+      lambda: ${{ steps.filter.outputs.lambda }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            project:
+              - 'Dockerfile'
+              - 'src/**/*.py'
+              - '!src/nzambe/cli.py'
+              - 'uv.lock'
+              - 'config/**'
+            lambda:
+              - 'lambda/**'
+              - '!lambda/docker-compose.yml'
+
   # Build the project image
   build-project:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.project == 'true'
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.set-tag.outputs.tag }}
@@ -79,6 +104,8 @@ jobs:
 
   # Build the Lambda image
   build-lambda:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.lambda == 'true'
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.set-tag.outputs.tag }}
