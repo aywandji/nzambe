@@ -1,9 +1,9 @@
 import logging
+import os
 
 from langfuse._client.get_client import get_client
 from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
 
-from nzambe.config import nzambe_settings
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +26,12 @@ def setup_langfuse_client():
 def setup_observability():
     # Skip Langfuse setup if keys are not configured
     if (
-        nzambe_settings.langfuse.public_key is None
-        or nzambe_settings.langfuse.secret_key is None
+        os.getenv("LANGFUSE_PUBLIC_KEY") is None
+        or os.getenv("LANGFUSE_SECRET_KEY") is None
     ):
-        logger.warning("Langfuse keys not configured. Skipping observability setup.")
+        logger.warning(
+            "Langfuse env vars not configured. Skipping observability setup."
+        )
         return
 
     setup_langfuse_client()

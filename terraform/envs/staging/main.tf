@@ -139,19 +139,19 @@ module "ecs" {
 
   environment_variables = concat([
     {
-      name  = "S3_VECTORS_BUCKET_ARN"
-      value = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_arn
+      name  = "NZAMBE_INDEX__S3_VECTORS_BUCKET_NAME"
+      value = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_name
     },
     {
-      name  = "S3_VECTORS_INDEX_ARN"
+      name  = "NZAMBE_INDEX__S3_VECTORS_INDEX_ARN"
       value = aws_s3vectors_index.vector_index.index_arn
     },
     {
-      name  = "S3_VECTORS_INDEX_DATA_TYPE"
+      name  = "NZAMBE_INDEX__S3_VECTORS_INDEX_DATA_TYPE"
       value = aws_s3vectors_index.vector_index.data_type
     },
     {
-      name  = "S3_VECTORS_INDEX_DISTANCE_METRIC"
+      name  = "NZAMBE_INDEX__S3_VECTORS_INDEX_DISTANCE_METRIC"
       value = aws_s3vectors_index.vector_index.distance_metric
     },
     {
@@ -187,11 +187,11 @@ resource "aws_s3vectors_vector_bucket" "s3vectors_bucket" {
 }
 
 resource "aws_s3vectors_index" "vector_index" {
-  index_name         = "${var.project_name}-${var.environment}-s3-vectors-index"
+  index_name         = "${var.project_name}-${var.environment}-s3-vectors-index-${var.vector_index_embedding_model}"
   vector_bucket_name = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_name
 
   data_type       = var.vector_index_data_type
-  dimension       = 2
+  dimension       = var.vector_index_dimension
   distance_metric = var.vector_index_distance_metric
 
   tags = {
@@ -204,9 +204,10 @@ resource "aws_s3vectors_index" "vector_index" {
 module "lambda_indexer" {
   source = "../../modules/lambda_indexer"
 
-  name_prefix                  = "${var.project_name}-${var.environment}"
-  environment                  = var.environment
-  lambda_image_uri             = "${data.aws_ecr_repository.app.repository_url}:${var.lambda_image_tag}"
+  name_prefix = "${var.project_name}-${var.environment}"
+  environment = var.environment
+  # lambda_image_uri             = "${data.aws_ecr_repository.app.repository_url}:${var.lambda_image_tag}"
+  lambda_image_uri             = ""
   source_bucket_name           = data.aws_s3_bucket.rag_documents.id
   source_bucket_arn            = data.aws_s3_bucket.rag_documents.arn
   vector_store_bucket_name     = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_name

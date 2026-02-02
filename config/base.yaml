@@ -1,6 +1,5 @@
 # Base configuration for Nzambe RAG server
 # This configuration is shared across all environments
-
 llm:
   query_model:
     name: "gemma3:1b-it-qat"

@@ -16,7 +16,6 @@ import click
 
 from nzambe.helpers.client import health_check, query_server
 from nzambe.constants import NZAMBE_SERVER_DEFAULT_BASE_URL
-from nzambe.helpers.eval import generate_new_questions_from_index, run_nightly_benchmark
 
 logger = logging.getLogger(__name__)
 
@@ -129,6 +128,8 @@ def generate_questions(
     questions_dataset_path,
 ):
     """Generate questions from documents in the index for evaluation purposes."""
+    from nzambe.helpers.eval import generate_new_questions_from_index
+
     try:
         click.echo("Generating questions from index...")
         click.echo(f"  Ollama model: {ollama_model}")
@@ -225,6 +226,8 @@ def server(host, port, reload, workers):
 )
 def eval(last_n_hours, num_traces_limit):
     """Run an evaluation benchmark on recent traces from Langfuse."""
+    from nzambe.helpers.eval import run_nightly_benchmark
+
     try:
         click.echo("Starting evaluation benchmark...")
         click.echo(f"  Time range: Last {last_n_hours} hours")

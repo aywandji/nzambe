@@ -6,8 +6,7 @@ import pytest
 import requests
 
 from nzambe.constants import NZAMBE_SERVER_DEFAULT_BASE_URL
-from nzambe.helpers.client import health_check, query_server
-from nzambe.server.server import HealthResponse
+from nzambe.helpers.client import health_check, query_server, HealthResponse
 
 
 class TestHealthCheck:
