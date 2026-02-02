@@ -53,3 +53,6 @@ lint = [
 test = [
     "pytest>=9.0.1",
 ]
+
+[tool.pytest]
+pythonpath = ["lambda/s3-indexer"]

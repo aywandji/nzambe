@@ -114,7 +114,7 @@ resource "aws_lambda_function" "indexer" {
 
   environment {
     variables = {
-      S3_VECTORS_BUCKET_ARN        = var.vector_store_bucket_arn
+      S3_VECTORS_BUCKET_NAME       = var.vector_store_bucket_name
       S3_VECTORS_INDEX_ARN         = var.s3vectors_index_arn
       OPENAI_SECRET_ARN            = var.openai_secret_arn
       CHUNK_SIZE                   = var.chunk_size
@@ -136,6 +136,17 @@ resource "aws_lambda_function" "indexer" {
     aws_iam_role_policy.lambda_s3_access,
     aws_iam_role_policy.lambda_secrets_access
   ]
+}
+
+resource "null_resource" "sam_metadata_lambda_indexer" {
+  triggers = {
+    resource_name     = "aws_lambda_function.indexer"
+    resource_type     = "IMAGE_LAMBDA_FUNCTION"
+    docker_context    = "/home/arnaud/projects/nzambe/lambda/s3-indexer"
+    docker_file       = "Dockerfile"
+    docker_tag        = "local"
+    docker_build_args = jsonencode({})
+  }
 }
 
 #####################################

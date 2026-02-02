@@ -9,7 +9,11 @@ from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import (
+    BaseSettings,
+    SettingsConfigDict,
+    PydanticBaseSettingsSource,
+)
 
 from dotenv import load_dotenv
 
@@ -18,15 +22,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-class LangfuseConfig(BaseModel):
-    """Langfuse observability configuration."""
-
-    # Using validation_alias allows these to be found even if NZAMBE_ prefix is set globally
-    public_key: str | None = Field(default=None, validation_alias="LANGFUSE_PUBLIC_KEY")
-    secret_key: str | None = Field(default=None, validation_alias="LANGFUSE_SECRET_KEY")
-    host: str = Field(
-        default="http://localhost:3000", validation_alias="LANGFUSE_BASE_URL"
-    )
+# class LangfuseConfig(BaseModel):
+#     """Langfuse observability configuration."""
+#
+#     # Using alias allows these to be found even if NZAMBE_ prefix is set globally
+#     public_key: str | None = Field(default=None, alias="LANGFUSE_PUBLIC_KEY")
+#     secret_key: str | None = Field(default=None, alias="LANGFUSE_SECRET_KEY")
+#     host: str = Field(default="http://localhost:3000", alias="LANGFUSE_BASE_URL")
 
 
 class EmbeddingModel(BaseModel):
@@ -36,7 +38,7 @@ class EmbeddingModel(BaseModel):
     platform: str
     tokenizer: str
     embed_batch_size: int = 10
-    api_key: str | None = Field(default=None, validation_alias="OPENAI_API_KEY")
+    api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     other_kwargs: dict | None = None
 
     def __str__(self):
@@ -50,7 +52,7 @@ class QueryModel(BaseModel):
     platform: str
     context_window: int = 4096
     request_timeout: float = 360.0
-    api_key: str | None = Field(default=None, validation_alias="OPENAI_API_KEY")
+    api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     other_kwargs: dict | None = None
 
     def __str__(self):
@@ -72,17 +74,15 @@ class IndexConfig(BaseModel):
     paragraph_separator: str = "\n\n"
     insert_batch_size: int = 2048
     # remote index configuration
-    s3vectors_bucket_arn: str | None = Field(
-        default=None, validation_alias="S3_VECTORS_BUCKET_ARN"
+    s3vectors_bucket_name: str | None = Field(
+        default=None, alias="S3_VECTORS_BUCKET_NAME"
     )
-    s3vectors_index_arn: str | None = Field(
-        default=None, validation_alias="S3_VECTORS_INDEX_ARN"
-    )
+    s3vectors_index_arn: str | None = Field(default=None, alias="S3_VECTORS_INDEX_ARN")
     s3vectors_index_data_type: str | None = Field(
-        default=None, validation_alias="S3_VECTORS_INDEX_DATA_TYPE"
+        default=None, alias="S3_VECTORS_INDEX_DATA_TYPE"
     )
     s3vectors_index_distance_metric: str | None = Field(
-        default=None, validation_alias="S3_VECTORS_INDEX_DISTANCE_METRIC"
+        default=None, alias="S3_VECTORS_INDEX_DISTANCE_METRIC"
     )
 
 
@@ -139,13 +139,13 @@ class NzambeSettings(BaseSettings):
         populate_by_name=True,
     )
 
-    env: str = Field(validation_alias="NZAMBE_ENV")
+    env: str = Field(alias="NZAMBE_ENV")
 
     # Nested configuration groups
     llm: LLMConfig
     index: IndexConfig
     query_engine: QueryEngineConfig
-    langfuse: LangfuseConfig = LangfuseConfig()
+    # langfuse: LangfuseConfig = LangfuseConfig()
     data: DataConfig
     eval: EvalConfig | None = None
 
@@ -185,6 +185,30 @@ class NzambeSettings(BaseSettings):
 
         # Initialize with merged configuration
         super().__init__(**config_data)
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        """
+        Define the sources and their order for loading the settings values.
+
+        Args:
+            settings_cls: The Settings class.
+            init_settings: The `InitSettingsSource` instance.
+            env_settings: The `EnvSettingsSource` instance.
+            dotenv_settings: The `DotEnvSettingsSource` instance.
+            file_secret_settings: The `SecretsSettingsSource` instance.
+
+        Returns:
+            A tuple containing the sources and their order for loading the settings values.
+        """
+        return env_settings, init_settings
 
     @staticmethod
     def _load_yaml(path: Path) -> dict[str, Any]:

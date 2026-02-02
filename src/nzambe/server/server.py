@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from nzambe import __version__
 from nzambe.config import nzambe_settings
 from nzambe.constants import APP_DESCRIPTION, APP_TITLE
+from nzambe.helpers.client import HealthResponse
 from nzambe.helpers.data_processing import build_documents_index
 from nzambe.helpers.llm import setup_llama_index_llms
 from nzambe.helpers.observability import setup_observability
@@ -39,11 +40,6 @@ class QueryResponse(BaseModel):
     nodes: list[str]
 
 
-class HealthResponse(BaseModel):
-    status: str
-    query_engine_loaded: bool
-
-
 class RetrieverResponse(BaseModel):
     nodes: list[NodeWithScore]
 
@@ -53,6 +49,10 @@ def get_query_engine(request: Request) -> RetrieverQueryEngine:
     if engine is None:
         raise HTTPException(status_code=503, detail="Query engine not initialized.")
     return engine
+
+
+def get_index_num_vectors(request: Request) -> int | None:
+    return getattr(request.app.state, "index_num_vectors", None)
 
 
 @asynccontextmanager
@@ -82,6 +82,7 @@ async def lifespan(app: FastAPI):
     logger.info(f"Using embedding model: {nzambe_settings.llm.embedding_model}")
     logger.info(f"Using LLM: {nzambe_settings.llm.query_model.name}")
 
+    nb_vectors = None
     if nzambe_settings.index.type == "memory":
         # Local/test environment: Build index from local files
         data_folder_path = Path(nzambe_settings.data.folder_path)
@@ -98,8 +99,8 @@ async def lifespan(app: FastAPI):
             input_data_files=input_data_files,
         )
     elif nzambe_settings.index.type == "s3vectors_index":
-        if not nzambe_settings.index.s3vectors_bucket_arn:
-            raise RuntimeError("s3vectors_bucket_arn must be set in the config")
+        if not nzambe_settings.index.s3vectors_bucket_name:
+            raise RuntimeError("s3vectors_bucket_name must be set in the config")
         if not nzambe_settings.index.s3vectors_index_arn:
             raise RuntimeError("s3vectors_index_arn must be set in the config")
         if not nzambe_settings.index.s3vectors_index_data_type:
@@ -112,12 +113,25 @@ async def lifespan(app: FastAPI):
         # Connect to the remote index
         vector_store = S3VectorStore(
             index_name_or_arn=nzambe_settings.index.s3vectors_index_arn,
-            bucket_name_or_arn=nzambe_settings.index.s3vectors_bucket_arn,
+            bucket_name_or_arn=nzambe_settings.index.s3vectors_bucket_name,
             data_type=nzambe_settings.index.s3vectors_index_data_type,
             distance_metric=nzambe_settings.index.s3vectors_index_distance_metric,
         )
+        # check if the vector index is empty
+        nb_vectors = len(
+            vector_store.client.list_vectors(
+                **{
+                    "vectorBucketName": vector_store.bucket_name_or_arn,
+                    "indexName": vector_store.index_name_or_arn,
+                    "returnMetadata": False,
+                    "returnData": False,
+                }
+            )["vectors"]
+        )
         index = VectorStoreIndex.from_vector_store(vector_store=vector_store)
-        logger.info("Successfully connected to s3vectors index")
+        logger.info(
+            f"Successfully connected to s3vectors index having {nb_vectors} vectors"
+        )
     else:
         logger.error(f"Unknown index type: {nzambe_settings.index.type}")
         raise RuntimeError("Server cannot start with unknown index type")
@@ -138,6 +152,8 @@ async def lifespan(app: FastAPI):
         text_qa_template=custom_qa_prompt or DEFAULT_TEXT_QA_PROMPT,
         refine_template=custom_refine_prompt or DEFAULT_REFINE_PROMPT,
     )
+    app.state.index_num_vectors = nb_vectors
+
     logger.info("Server initialization complete. Ready to accept requests.")
 
     yield
@@ -168,10 +184,13 @@ async def health_check(query_engine: RetrieverQueryEngine = Depends(get_query_en
 async def query(
     request: QueryRequest,
     query_engine: RetrieverQueryEngine = Depends(get_query_engine),
+    index_num_vectors: int | None = Depends(get_index_num_vectors),
 ):
     """
     Query endpoint to ask questions to the RAG system.
     """
+    if (index_num_vectors is not None) and (index_num_vectors == 0):
+        return QueryResponse(answer="No documents in index.", nodes=[])
     try:
         logger.info(f"Received query: {request.question}")
         response = await query_engine.aquery(request.question)

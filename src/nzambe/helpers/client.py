@@ -3,9 +3,14 @@ import os
 from typing import Optional
 
 import requests
+from pydantic import BaseModel
 
 from nzambe.constants import NZAMBE_SERVER_DEFAULT_BASE_URL
-from nzambe.server.server import HealthResponse
+
+
+class HealthResponse(BaseModel):
+    status: str
+    query_engine_loaded: bool
 
 
 def _get_base_url(explicit: Optional[str] = None) -> str:

@@ -139,7 +139,7 @@ module "ecs" {
 
   environment_variables = concat([
     # {
-    #   name = "S3_VECTORS_BUCKET_ARN"
+    #   name = "S3_VECTORS_BUCKET_NAME"
     #   value = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_arn
     # },
     #  {

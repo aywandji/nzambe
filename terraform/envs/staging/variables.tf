@@ -119,6 +119,12 @@ variable "vector_index_chunk_overlap" {
   default     = 120
 }
 
+variable "vector_index_dimension" {
+  description = "Dimension of the vectors inside the index"
+  type        = number
+  default     = 1536 # embedding dimension of text-embedding-3-small. Both must match
+}
+
 variable "vector_index_embedding_model" {
   description = "Embedding model for each document indexing"
   type        = string
