@@ -170,6 +170,7 @@ module "ecs" {
 
   # S3 bucket for vector store access
   s3_vector_store_bucket_arn = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_arn
+  s3vectors_index_arn        = aws_s3vectors_index.vector_index.index_arn
 }
 
 
