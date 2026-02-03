@@ -144,3 +144,27 @@ jobs:
             -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "✅ Pushed Lambda image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+  # Create build artifact with image tags
+  create-build-artifact:
+    runs-on: ubuntu-latest
+    needs: [build-project, build-lambda]
+    if: always() # Run even if some builds were skipped
+    steps:
+      - name: Generate build info
+        run: |
+          cat > build-info.json <<EOF
+          {
+            "project_tag": "${{ needs.build-project.outputs.image_tag || 'null' }}",
+            "lambda_tag": "${{ needs.build-lambda.outputs.image_tag || 'null' }}"
+          }
+          EOF
+          cat build-info.json
+          echo "✅ Generated build artifact"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-info
+          path: build-info.json
+          retention-days: 1
