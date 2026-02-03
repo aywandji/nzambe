@@ -104,6 +104,12 @@ variable "s3_vector_store_bucket_arn" {
   default     = ""
 }
 
+variable "s3vectors_index_arn" {
+  description = "ARN of the S3 Vectors index"
+  type        = string
+  default     = ""
+}
+
 # Auto-scaling variables
 variable "min_capacity" {
   description = "Minimum number of tasks"

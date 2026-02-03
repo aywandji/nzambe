@@ -138,22 +138,22 @@ module "ecs" {
   ]
 
   environment_variables = concat([
-    # {
-    #   name = "S3_VECTORS_BUCKET_NAME"
-    #   value = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_arn
-    # },
-    #  {
-    #   name = "S3_VECTORS_INDEX_ARN"
-    #   value = aws_s3vectors_index.vector_index.index_arn
-    # },
-    #  {
-    #   name = "S3_VECTORS_INDEX_DATA_TYPE"
-    #   value = aws_s3vectors_index.vector_index.data_type
-    # },
-    #  {
-    #   name = "S3_VECTORS_INDEX_DISTANCE_METRIC"
-    #   value = aws_s3vectors_index.vector_index.distance_metric
-    # },
+    {
+      name  = "NZAMBE_INDEX__S3_VECTORS_BUCKET_NAME"
+      value = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_name
+    },
+    {
+      name  = "NZAMBE_INDEX__S3_VECTORS_INDEX_ARN"
+      value = aws_s3vectors_index.vector_index.index_arn
+    },
+    {
+      name  = "NZAMBE_INDEX__S3_VECTORS_INDEX_DATA_TYPE"
+      value = aws_s3vectors_index.vector_index.data_type
+    },
+    {
+      name  = "NZAMBE_INDEX__S3_VECTORS_INDEX_DISTANCE_METRIC"
+      value = aws_s3vectors_index.vector_index.distance_metric
+    },
     {
       name  = "NZAMBE_ENV"
       value = "prod"
@@ -165,10 +165,12 @@ module "ecs" {
   min_capacity = var.min_capacity
   max_capacity = var.max_capacity
 
-  # Capacity provider - 30% Fargate Spot for prod (balance cost and reliability)
+  # Capacity provider - 80% Fargate Spot for prod (balance cost and reliability)
   fargate_spot_weight = 80
 
+  # S3 bucket for vector store access
   s3_vector_store_bucket_arn = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_arn
+  s3vectors_index_arn        = aws_s3vectors_index.vector_index.index_arn
 }
 
 

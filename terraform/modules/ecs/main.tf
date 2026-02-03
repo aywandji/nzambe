@@ -136,29 +136,32 @@ resource "aws_iam_role" "task" {
   }
 }
 
-# # Optional: S3 access for RAG document store
-# resource "aws_iam_role_policy" "task_s3_access" {
-#   # count = var.s3_vector_store_bucket_arn != "" ? 1 : 0
-#   name  = "${var.name_prefix}-task-s3-access"
-#   role  = aws_iam_role.task.id
-#
-#   policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [
-#       {
-#         Effect = "Allow"
-#         Action = [
-#           "s3:GetObject",
-#           "s3:ListBucket"
-#         ]
-#         Resource = [
-#           var.s3_vector_store_bucket_arn,
-#           "${var.s3_vector_store_bucket_arn}/*"
-#         ]
-#       }
-#     ]
-#   })
-# }
+# S3 Vectors access for RAG
+resource "aws_iam_role_policy" "task_s3_access" {
+  count = var.s3_vector_store_bucket_arn != "" ? 1 : 0
+  name  = "${var.name_prefix}-task-s3-access"
+  role  = aws_iam_role.task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListVectors",
+          "s3:QueryVectors",
+          "s3:GetObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          var.s3_vector_store_bucket_arn,
+          "${var.s3_vector_store_bucket_arn}/*",
+          var.s3vectors_index_arn
+        ]
+      }
+    ]
+  })
+}
 
 #####################################
 # Security Group - ECS Tasks

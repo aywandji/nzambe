@@ -47,7 +47,7 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-# S3 access policy for Lambda
+# S3 and S3 Vectors access policy for Lambda
 resource "aws_iam_role_policy" "lambda_s3_access" {
   name = "${var.name_prefix}-lambda-s3-access"
   role = aws_iam_role.lambda_execution.id
@@ -55,7 +55,7 @@ resource "aws_iam_role_policy" "lambda_s3_access" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
-      {
+      { # source bucket policy
         Effect = "Allow"
         Action = [
           "s3:GetObject",
@@ -66,16 +66,19 @@ resource "aws_iam_role_policy" "lambda_s3_access" {
           "${var.source_bucket_arn}/*"
         ]
       },
-      {
+      { # s3vectors bucket and index policy
         Effect = "Allow"
         Action = [
           "s3:GetObject",
           "s3:PutObject",
-          "s3:ListBucket"
+          "s3:ListBucket",
+          "s3:InsertVectors",
+          "s3:ListVectors"
         ]
         Resource = [
           var.vector_store_bucket_arn,
-          "${var.vector_store_bucket_arn}/*"
+          "${var.vector_store_bucket_arn}/*",
+          var.s3vectors_index_arn
         ]
       }
     ]
@@ -95,7 +98,7 @@ resource "aws_iam_role_policy" "lambda_secrets_access" {
         Action = [
           "secretsmanager:GetSecretValue"
         ]
-        Resource = [var.openai_secret_arn, var.s3vectors_index_arn, var.vector_store_bucket_arn]
+        Resource = [var.openai_secret_arn]
       }
     ]
   })
