@@ -18,11 +18,11 @@ on:
   workflow_dispatch: # useful to deploy manually using custom image tags
     inputs:
       image_tag:
-        description: "Optional custom project image tag for manual deploy"
+        description: "Optional custom project image tag (sha-..) for manual deploy"
         required: false
         type: string
       lambda_tag:
-        description: "Optional custom Lambda image tag for manual deploy"
+        description: "Optional custom Lambda image tag (sha-..) for manual deploy"
         required: false
         type: string
 
