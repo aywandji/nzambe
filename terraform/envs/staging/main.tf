@@ -204,10 +204,9 @@ resource "aws_s3vectors_index" "vector_index" {
 module "lambda_indexer" {
   source = "../../modules/lambda_indexer"
 
-  name_prefix = "${var.project_name}-${var.environment}"
-  environment = var.environment
-  # lambda_image_uri             = "${data.aws_ecr_repository.app.repository_url}:${var.lambda_image_tag}"
-  lambda_image_uri             = ""
+  name_prefix                  = "${var.project_name}-${var.environment}"
+  environment                  = var.environment
+  lambda_image_uri             = "${data.aws_ecr_repository.app.repository_url}:${var.lambda_image_tag}"
   source_bucket_name           = data.aws_s3_bucket.rag_documents.id
   source_bucket_arn            = data.aws_s3_bucket.rag_documents.arn
   vector_store_bucket_name     = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_name
