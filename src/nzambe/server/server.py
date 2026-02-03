@@ -121,7 +121,6 @@ async def lifespan(app: FastAPI):
         nb_vectors = len(
             vector_store.client.list_vectors(
                 **{
-                    "vectorBucketName": vector_store.bucket_name_or_arn,
                     "indexArn": vector_store.index_name_or_arn,
                     "returnMetadata": False,
                     "returnData": False,
