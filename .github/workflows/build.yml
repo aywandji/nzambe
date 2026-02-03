@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - main
-    paths:
+    paths: # here negative pattern exclude the path matches the pattern
       - 'Dockerfile'
       - 'src/**/*.py'
-      - 'uv.lock'
       - '!src/nzambe/cli.py'
+      - 'uv.lock'
       - 'config/**'
       - 'lambda/**'
       - '!lambda/docker-compose.yml'
@@ -42,16 +42,14 @@ jobs:
       - uses: dorny/paths-filter@v2
         id: filter
         with:
-          filters: |
+          filters: | # don't use a negative pattern here as it will match all files except the ones from the pattern
             project:
               - 'Dockerfile'
               - 'src/**/*.py'
-              - '!src/nzambe/cli.py'
               - 'uv.lock'
               - 'config/**'
             lambda:
               - 'lambda/**'
-              - '!lambda/docker-compose.yml'
 
   # Build the project image
   build-project:
