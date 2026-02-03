@@ -34,7 +34,13 @@ def setup_observability():
         )
         return
 
-    setup_langfuse_client()
+    try:
+        setup_langfuse_client()
+    except Exception as e:
+        logger.error(
+            f"Failed to setup Langfuse client: {str(e)}. Skipping observability setup."
+        )
+        return
     # This hooks into LlamaIndex and auto-logs every step
     # This third-party instrumentation automatically captures LlamaIndex operations
     # and exports OpenTelemetry (OTel) spans to Langfuse.
