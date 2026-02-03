@@ -120,7 +120,7 @@ jobs:
             echo "Using manually provided project image tag: $PROJECT_TAG"
           elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
             # cd to project root to read the downloaded artifact
-            cd ../../..
+            cd $GITHUB_WORKSPACE
             if [ -f "build-info.json" ]; then
               PROJECT_TAG=$(jq -r '.project_tag' build-info.json)
               if [ "$PROJECT_TAG" == "null" ] || [ -z "$PROJECT_TAG" ]; then
@@ -157,7 +157,7 @@ jobs:
             echo "Using manually provided Lambda image tag: $LAMBDA_TAG"
           elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
             # Read from build artifact
-            cd ../../..
+            cd $GITHUB_WORKSPACE
             if [ -f "build-info.json" ]; then
               LAMBDA_TAG=$(jq -r '.lambda_tag' build-info.json)
               if [ "$LAMBDA_TAG" == "null" ] || [ -z "$LAMBDA_TAG" ]; then
