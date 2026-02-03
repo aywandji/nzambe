@@ -69,11 +69,12 @@ resource "aws_iam_role_policy" "lambda_s3_access" {
       { # s3vectors bucket and index policy
         Effect = "Allow"
         Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:ListBucket",
-          "s3:InsertVectors",
-          "s3:ListVectors"
+          "s3vectors:QueryVectors",
+          "s3vectors:DeleteVectors",
+          "s3vectors:GetVectors",
+          "s3vectors:PutVectors",
+          "s3vectors:ListVectors",
+          "s3vectors:GetIndex"
         ]
         Resource = [
           var.vector_store_bucket_arn,

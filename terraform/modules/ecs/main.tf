@@ -148,10 +148,10 @@ resource "aws_iam_role_policy" "task_s3_access" {
       {
         Effect = "Allow"
         Action = [
-          "s3:ListVectors",
-          "s3:QueryVectors",
-          "s3:GetObject",
-          "s3:ListBucket"
+          "s3vectors:QueryVectors",
+          "s3vectors:GetVectors",
+          "s3vectors:ListVectors",
+          "s3vectors:GetIndex"
         ]
         Resource = [
           var.s3_vector_store_bucket_arn,

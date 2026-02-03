@@ -34,11 +34,11 @@ class TestGetOpenAIApiKey:
             "SecretString": expected_key
         }
 
-        result = handler.get_openai_api_key()
+        result = handler.get_openai_api_key("test_secret_arn")
 
         assert result == expected_key
         mock_secrets_client.get_secret_value.assert_called_once_with(
-            SecretId=handler.OPENAI_SECRET_ARN
+            SecretId="test_secret_arn"
         )
 
     @patch("handler.secrets_client")
@@ -49,7 +49,7 @@ class TestGetOpenAIApiKey:
         mock_secrets_client.get_secret_value.side_effect = Exception(error_msg)
 
         with pytest.raises(Exception, match=error_msg):
-            handler.get_openai_api_key()
+            handler.get_openai_api_key("test_secret_arn")
 
         mock_logger.error.assert_called_once()
 
@@ -78,6 +78,11 @@ class TestDownloadFileFromS3Async:
         mock_logger.info.assert_called_once()
 
 
+@pytest.fixture()
+def config():
+    return handler.get_config()
+
+
 class TestProcessDocument:
     """Tests for process_document function."""
 
@@ -85,7 +90,7 @@ class TestProcessDocument:
     @patch("handler.IngestionPipeline")
     @patch("handler.SimpleDirectoryReader")
     async def test_processes_document_successfully(
-        self, mock_reader_class, mock_pipeline_class
+        self, mock_reader_class, mock_pipeline_class, config
     ):
         """Test successful document processing with loading, chunking, and indexing."""
         file_path = "/tmp/test.txt"
@@ -103,7 +108,7 @@ class TestProcessDocument:
         mock_pipeline.arun = AsyncMock(return_value=mock_nodes)
         mock_pipeline_class.return_value = mock_pipeline
 
-        await handler.process_document(file_path, mock_index)
+        await handler.process_document(file_path, mock_index, config=config)
 
         # Verify document loading
         mock_reader_class.assert_called_once_with(
@@ -124,7 +129,9 @@ class TestProcessSingleRecord:
     @pytest.mark.asyncio
     @patch("handler.process_document")
     @patch("handler.download_file_from_s3_async")
-    async def test_successfully_processes_record(self, mock_download, mock_process_doc):
+    async def test_successfully_processes_record(
+        self, mock_download, mock_process_doc, config
+    ):
         """Test successful processing of a single S3 record."""
         bucket = "test-bucket"
         key = "documents/test.txt"
@@ -134,7 +141,7 @@ class TestProcessSingleRecord:
         mock_process_doc.return_value = None
 
         success, result_key, error = await handler.process_single_record(
-            (bucket, key), mock_index
+            (bucket, key), mock_index, config
         )
 
         assert success is True
@@ -146,7 +153,7 @@ class TestProcessSingleRecord:
     @pytest.mark.asyncio
     @patch("handler.download_file_from_s3_async")
     @patch("handler.logger")
-    async def test_handles_processing_failure(self, mock_logger, mock_download):
+    async def test_handles_processing_failure(self, mock_logger, mock_download, config):
         """Test that exceptions are caught and returned as failure tuple."""
         bucket = "test-bucket"
         key = "documents/test.txt"
@@ -156,7 +163,7 @@ class TestProcessSingleRecord:
         mock_download.side_effect = Exception(error_msg)
 
         success, result_key, error = await handler.process_single_record(
-            (bucket, key), mock_index
+            (bucket, key), mock_index, config
         )
 
         assert success is False
@@ -173,7 +180,7 @@ class TestAsyncHandler:
     @patch("handler.get_s3_index")
     @patch("handler.process_single_record")
     async def test_processes_multiple_txt_files(
-        self, mock_process, mock_get_index, mock_get_key
+        self, mock_process, mock_get_index, mock_get_key, config
     ):
         """Test processing multiple .txt files concurrently."""
         event = {
@@ -197,7 +204,7 @@ class TestAsyncHandler:
         mock_process.return_value = (True, "doc1.txt", "")
         mock_get_key.return_value = "test-key"
 
-        response = await handler.async_handler(event)
+        response = await handler.async_handler(event, config)
 
         assert response["statusCode"] == 200
         body = json.loads(response["body"])
@@ -211,7 +218,7 @@ class TestAsyncHandler:
     @patch("handler.get_s3_index")
     @patch("handler.process_single_record")
     async def test_filters_non_txt_files(
-        self, mock_process, mock_get_index, mock_get_key
+        self, mock_process, mock_get_index, mock_get_key, config
     ):
         """Test that non-.txt files are skipped."""
         event = {
@@ -240,7 +247,7 @@ class TestAsyncHandler:
         mock_process.return_value = (True, "doc.txt", "")
         mock_get_key.return_value = "test-key"
 
-        response = await handler.async_handler(event)
+        response = await handler.async_handler(event, config)
 
         # Only .txt file should be processed
         assert mock_process.call_count == 1
@@ -253,7 +260,7 @@ class TestAsyncHandler:
     @patch("handler.get_s3_index")
     @patch("handler.process_single_record")
     async def test_handles_mixed_success_and_failure(
-        self, mock_process, mock_get_index, mock_get_key
+        self, mock_process, mock_get_index, mock_get_key, config
     ):
         """Test handling of mixed success and failure results."""
         event = {
@@ -280,7 +287,7 @@ class TestAsyncHandler:
         ]
         mock_get_key.return_value = "test-key"
 
-        response = await handler.async_handler(event)
+        response = await handler.async_handler(event, config)
 
         assert response["statusCode"] == 200  # At least one success
         body = json.loads(response["body"])
@@ -292,7 +299,7 @@ class TestAsyncHandler:
     @patch("handler.get_s3_index")
     @patch("handler.process_single_record")
     async def test_returns_500_when_all_fail(
-        self, mock_process, mock_get_index, mock_get_key
+        self, mock_process, mock_get_index, mock_get_key, config
     ):
         """Test that 500 status is returned when all records fail."""
         event = {
@@ -309,7 +316,7 @@ class TestAsyncHandler:
         mock_process.return_value = (False, "doc.txt", "Error processing")
         mock_get_key.return_value = "test-key"
 
-        response = await handler.async_handler(event)
+        response = await handler.async_handler(event, config)
 
         assert response["statusCode"] == 500
         body = json.loads(response["body"])
@@ -321,7 +328,7 @@ class TestAsyncHandler:
     @patch("handler.get_s3_index")
     @patch("handler.process_single_record")
     async def test_handles_url_encoded_keys(
-        self, mock_process, mock_get_index, mock_get_key
+        self, mock_process, mock_get_index, mock_get_key, config
     ):
         """Test that URL-encoded S3 keys are properly decoded."""
         event = {
@@ -338,7 +345,7 @@ class TestAsyncHandler:
         mock_process.return_value = (True, "folder/file name.txt", "")
         mock_get_key.return_value = "test-key"
 
-        await handler.async_handler(event)
+        await handler.async_handler(event, config)
 
         # Verify the key was decoded
         call_args = mock_process.call_args[0]
