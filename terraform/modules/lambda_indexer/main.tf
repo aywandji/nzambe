@@ -79,7 +79,6 @@ resource "aws_iam_role_policy" "lambda_s3_access" {
         Resource = [
           var.vector_store_bucket_arn,
           "${var.vector_store_bucket_arn}/*",
-          var.s3vectors_index_name,
           var.s3vectors_index_arn
         ]
       }
