@@ -195,6 +195,10 @@ resource "aws_s3vectors_index" "vector_index" {
   dimension       = var.vector_index_dimension
   distance_metric = var.vector_index_distance_metric
 
+  metadata_configuration {
+    non_filterable_metadata_keys = ["_node_content"]
+  }
+
   tags = {
     environment = var.environment
   }
@@ -213,6 +217,7 @@ module "lambda_indexer" {
   vector_store_bucket_name     = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_name
   vector_store_bucket_arn      = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_arn
   s3vectors_index_arn          = aws_s3vectors_index.vector_index.index_arn
+  s3vectors_index_name         = aws_s3vectors_index.vector_index.index_name
   openai_secret_arn            = aws_secretsmanager_secret.openai_api_key.arn
   timeout                      = 300
   memory_size                  = 512
