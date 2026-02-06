@@ -143,6 +143,10 @@ module "ecs" {
       value = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_name
     },
     {
+      name  = "NZAMBE_INDEX__S3_VECTORS_INDEX_NAME"
+      value = aws_s3vectors_index.vector_index.index_name
+    },
+    {
       name  = "NZAMBE_INDEX__S3_VECTORS_INDEX_ARN"
       value = aws_s3vectors_index.vector_index.index_arn
     },

@@ -24,7 +24,6 @@ from nzambe.helpers.data_processing import build_documents_index
 from nzambe.helpers.llm import setup_llama_index_llms
 from nzambe.helpers.observability import setup_observability
 
-# Turn on debug logging to check what the llamaindex app is doing
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
@@ -101,8 +100,8 @@ async def lifespan(app: FastAPI):
     elif nzambe_settings.index.type == "s3vectors_index":
         if not nzambe_settings.index.s3vectors_bucket_name:
             raise RuntimeError("s3vectors_bucket_name must be set in the config")
-        if not nzambe_settings.index.s3vectors_index_arn:
-            raise RuntimeError("s3vectors_index_arn must be set in the config")
+        if not nzambe_settings.index.s3vectors_index_name:
+            raise RuntimeError("s3vectors_index_name must be set in the config")
         if not nzambe_settings.index.s3vectors_index_data_type:
             raise RuntimeError("s3vectors_index_data_type must be set in the config")
         if not nzambe_settings.index.s3vectors_index_distance_metric:
@@ -112,7 +111,7 @@ async def lifespan(app: FastAPI):
 
         # Connect to the remote index
         vector_store = S3VectorStore(
-            index_name_or_arn=nzambe_settings.index.s3vectors_index_arn,
+            index_name_or_arn=nzambe_settings.index.s3vectors_index_name,
             bucket_name_or_arn=nzambe_settings.index.s3vectors_bucket_name,
             data_type=nzambe_settings.index.s3vectors_index_data_type,
             distance_metric=nzambe_settings.index.s3vectors_index_distance_metric,
@@ -121,7 +120,7 @@ async def lifespan(app: FastAPI):
         nb_vectors = len(
             vector_store.client.list_vectors(
                 **{
-                    "indexArn": vector_store.index_name_or_arn,
+                    "indexArn": nzambe_settings.index.s3vectors_index_arn,
                     "returnMetadata": False,
                     "returnData": False,
                 }
