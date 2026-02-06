@@ -79,6 +79,7 @@ resource "aws_iam_role_policy" "lambda_s3_access" {
         Resource = [
           var.vector_store_bucket_arn,
           "${var.vector_store_bucket_arn}/*",
+          var.s3vectors_index_name,
           var.s3vectors_index_arn
         ]
       }
@@ -119,7 +120,7 @@ resource "aws_lambda_function" "indexer" {
   environment {
     variables = {
       S3_VECTORS_BUCKET_NAME       = var.vector_store_bucket_name
-      S3_VECTORS_INDEX_ARN         = var.s3vectors_index_arn
+      S3_VECTORS_INDEX_NAME        = var.s3vectors_index_name
       OPENAI_SECRET_ARN            = var.openai_secret_arn
       CHUNK_SIZE                   = var.chunk_size
       CHUNK_OVERLAP                = var.chunk_overlap

@@ -7,7 +7,7 @@ Tests cover the main features and behaviors of the handler using pytest and unit
 import os
 
 os.environ["S3_VECTORS_BUCKET_NAME"] = "test"
-os.environ["S3_VECTORS_INDEX_ARN"] = "test"
+os.environ["S3_VECTORS_INDEX_NAME"] = "test"
 os.environ["OPENAI_SECRET_ARN"] = "test"
 os.environ["CHUNK_SIZE"] = "10"
 os.environ["CHUNK_OVERLAP"] = "2"

@@ -42,7 +42,7 @@ def get_config():
     """Get configuration from environment variables."""
     return {
         "S3_VECTORS_BUCKET_NAME": os.environ["S3_VECTORS_BUCKET_NAME"],
-        "S3_VECTORS_INDEX_ARN": os.environ["S3_VECTORS_INDEX_ARN"],
+        "S3_VECTORS_INDEX_NAME": os.environ["S3_VECTORS_INDEX_NAME"],
         "OPENAI_SECRET_ARN": os.environ["OPENAI_SECRET_ARN"],
         "CHUNK_SIZE": int(os.environ.get("CHUNK_SIZE", "512")),
         "CHUNK_OVERLAP": int(os.environ.get("CHUNK_OVERLAP", "120")),
@@ -67,7 +67,7 @@ def get_openai_api_key(openai_secret_arn):
 def setup_llama_index(config: dict) -> VectorStoreIndex:
     # Connect to the remote index
     vector_store = S3VectorStore(
-        index_name_or_arn=config["S3_VECTORS_INDEX_ARN"],
+        index_name_or_arn=config["S3_VECTORS_INDEX_NAME"],
         bucket_name_or_arn=config["S3_VECTORS_BUCKET_NAME"],
         insert_batch_size=500,
         # the below values must be the same as the ones used in the vector store creation in terraform

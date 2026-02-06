@@ -38,6 +38,11 @@ variable "s3vectors_index_arn" {
   type        = string
 }
 
+variable "s3vectors_index_name" {
+  description = "Name of the S3 Vectors index"
+  type        = string
+}
+
 variable "openai_secret_arn" {
   description = "ARN of the Secrets Manager secret containing OpenAI API key"
   type        = string

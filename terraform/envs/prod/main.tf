@@ -212,7 +212,7 @@ module "lambda_indexer" {
   source_bucket_arn            = data.aws_s3_bucket.rag_documents.arn
   vector_store_bucket_name     = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_name
   vector_store_bucket_arn      = aws_s3vectors_vector_bucket.s3vectors_bucket.vector_bucket_arn
-  s3vectors_index_arn          = aws_s3vectors_index.vector_index.index_arn
+  s3vectors_index_name         = aws_s3vectors_index.vector_index.index_name
   openai_secret_arn            = aws_secretsmanager_secret.openai_api_key.arn
   timeout                      = 300
   memory_size                  = 512
