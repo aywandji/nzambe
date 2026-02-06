@@ -77,6 +77,9 @@ class IndexConfig(BaseModel):
     s3vectors_bucket_name: str | None = Field(
         default=None, alias="S3_VECTORS_BUCKET_NAME"
     )
+    s3vectors_index_name: str | None = Field(
+        default=None, alias="S3_VECTORS_INDEX_NAME"
+    )
     s3vectors_index_arn: str | None = Field(default=None, alias="S3_VECTORS_INDEX_ARN")
     s3vectors_index_data_type: str | None = Field(
         default=None, alias="S3_VECTORS_INDEX_DATA_TYPE"
