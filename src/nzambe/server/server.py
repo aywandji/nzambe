@@ -19,7 +19,7 @@ from pydantic import BaseModel
 from nzambe import __version__
 from nzambe.config import nzambe_settings
 from nzambe.constants import APP_DESCRIPTION, APP_TITLE
-from nzambe.helpers.client import HealthResponse
+from nzambe.utils import HealthResponse
 from nzambe.helpers.data_processing import build_documents_index
 from nzambe.helpers.llm import setup_llama_index_llms
 from nzambe.helpers.observability import setup_observability

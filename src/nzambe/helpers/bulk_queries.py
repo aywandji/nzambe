@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from tqdm import tqdm
 
-from nzambe.helpers.client import query_server
+from nzambe.client.helpers import query_server
 
 logger = logging.getLogger(__name__)
 
