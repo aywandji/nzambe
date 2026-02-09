@@ -75,18 +75,6 @@ jobs:
       - name: Update AWS Secrets Manager
         run: |
           aws secretsmanager put-secret-value \
-            --secret-id nzambe-staging-langfuse-secret-key \
-            --secret-string "${{ secrets.LANGFUSE_SECRET_KEY }}"
-
-          aws secretsmanager put-secret-value \
-            --secret-id nzambe-staging-langfuse-public-key \
-            --secret-string "${{ secrets.LANGFUSE_PUBLIC_KEY }}"
-
-          aws secretsmanager put-secret-value \
-            --secret-id nzambe-staging-langfuse-base-url \
-            --secret-string "${{ secrets.LANGFUSE_BASE_URL }}"
-
-          aws secretsmanager put-secret-value \
             --secret-id nzambe-staging-openai-api-key \
             --secret-string "${{ secrets.OPENAI_API_KEY }}"
 
