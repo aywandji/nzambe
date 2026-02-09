@@ -27,7 +27,7 @@ dependencies = [
 ]
 
 [project.scripts]
-nzambe = "nzambe.cli:cli"
+nzambe = "nzambe.client.cli:cli"
 
 [build-system]
 requires = ["hatchling"]

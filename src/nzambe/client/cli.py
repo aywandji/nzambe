@@ -8,13 +8,14 @@ Usage:
     nzambe generate-questions [OPTIONS]
     nzambe server [--host HOST] [--port PORT] [--reload] [--workers N]
     nzambe eval [--last-n-hours N] [--num-traces-limit N]
+    nzambe add_documents --folder-path PATH --bucket-name BUCKET [--s3-prefix PREFIX]
 """
 
 import logging
 
 import click
 
-from nzambe.helpers.client import health_check, query_server
+from .helpers import health_check, query_server, upload_txt_files_to_s3
 from nzambe.constants import NZAMBE_SERVER_DEFAULT_BASE_URL
 
 logger = logging.getLogger(__name__)
@@ -242,6 +243,74 @@ def eval(last_n_hours, num_traces_limit):
         return 0
     except Exception as e:
         click.echo(f"Error running evaluation: {e}", err=True)
+        raise SystemExit(1)
+
+
+@cli.command()
+@click.option(
+    "--folder-path",
+    "-f",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=str),
+    help="Path to the local folder containing .txt files",
+)
+@click.option(
+    "--bucket-name",
+    "-b",
+    required=True,
+    help="Name of the S3 bucket",
+)
+@click.option(
+    "--s3-prefix",
+    "-p",
+    default="",
+    help="Optional prefix (folder path) in S3 (e.g., 'documents/books/')",
+)
+def add_documents(folder_path, bucket_name, s3_prefix):
+    """Upload .txt files from a local folder to an S3 bucket.
+    Ignore a file in the folder if it already exists in the bucket or if it is not a .txt file."""
+    import boto3
+    from botocore.exceptions import ClientError
+
+    try:
+        click.echo("Uploading .txt files to S3...")
+        click.echo(f"  Folder: {folder_path}")
+        click.echo(f"  Bucket: {bucket_name}")
+        if s3_prefix:
+            click.echo(f"  S3 Prefix: {s3_prefix}")
+        click.echo()
+
+        # Check if bucket exists
+        s3_client = boto3.client("s3")
+        try:
+            s3_client.head_bucket(Bucket=bucket_name)
+        except ClientError as e:
+            error_code = e.response["Error"]["Code"]
+            if error_code == "404":
+                click.echo(f"Error: Bucket '{bucket_name}' does not exist.", err=True)
+            elif error_code == "403":
+                click.echo(
+                    f"Error: Access denied to bucket '{bucket_name}'. Check your permissions.",
+                    err=True,
+                )
+            else:
+                click.echo(f"Error accessing bucket '{bucket_name}': {e}", err=True)
+            raise SystemExit(1)
+
+        result = upload_txt_files_to_s3(
+            folder_path=folder_path, bucket_name=bucket_name, s3_prefix=s3_prefix
+        )
+
+        click.echo("\n✓ Upload complete!")
+        click.echo(f"  Files uploaded: {len(result['uploaded'])}")
+        click.echo(
+            f"  Files skipped (because they already exists in the bucket): {len(result['skipped'])}"
+        )
+        return 0
+    except SystemExit:
+        raise
+    except Exception as e:
+        click.echo(f"Error uploading files: {e}", err=True)
         raise SystemExit(1)
 
 

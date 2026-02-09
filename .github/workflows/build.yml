@@ -7,7 +7,7 @@ on:
     paths: # here negative pattern exclude the path matches the pattern
       - 'Dockerfile'
       - 'src/**/*.py'
-      - '!src/nzambe/cli.py'
+      - '!src/nzambe/client/**'
       - 'uv.lock'
       - 'config/**'
       - 'lambda/**'
