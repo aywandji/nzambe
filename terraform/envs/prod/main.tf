@@ -98,7 +98,7 @@ module "ecs" {
   vpc_id                = module.vpc.vpc_id
   private_subnet_ids    = module.vpc.private_subnet_ids
   alb_security_group_id = module.alb.alb_security_group_id
-  target_group_arn      = module.alb.target_group_arn
+  target_group_arn      = module.alb.rag_server_target_group_arn
   aws_region            = var.aws_region
 
   container_name  = var.container_name

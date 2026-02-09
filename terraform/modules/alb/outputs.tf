@@ -13,12 +13,17 @@ output "alb_zone_id" {
   value       = aws_lb.main.zone_id
 }
 
-output "target_group_arn" {
-  description = "ARN of the target group"
+output "rag_server_target_group_arn" {
+  description = "ARN of the rag server target group"
   value       = aws_lb_target_group.app.arn
 }
 
 output "alb_security_group_id" {
   description = "Security group ID of the ALB"
   value       = aws_security_group.alb.id
+}
+
+output "listener_arn" {
+  description = "ARN of the HTTP listener"
+  value       = aws_lb_listener.http.arn
 }
