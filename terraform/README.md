@@ -19,7 +19,8 @@ terraform/
 ├── modules/
 │   ├── vpc/              # VPC, Subnets, NAT Gateway, Route Tables
 │   ├── alb/              # Application Load Balancer, Target Groups
-│   └── ecs/              # ECS Cluster, Service, Task Definition, Auto-scaling
+│   ├── ecs/              # ECS Cluster, Service, Task Definition, Auto-scaling
+│   └── lambda_indexer/   # Lambda function for document indexing
 ├── envs/
 │   ├── staging/          # Staging environment configuration
 │   │   ├── main.tf
@@ -63,6 +64,7 @@ terraform/
    ```
 
 3. **Docker** image built and ready to push
+   You can manually build an image or update a python file to let the ci/cd pipeline automatically handle it.
    ```bash
    docker build --build-arg APP_VERSION=$(git describe --tags --always) -t nzambe:latest .
    ```
@@ -72,6 +74,7 @@ terraform/
 ### Step 1: Deploy Global Resources (First Time Only)
 
 The global resources include the ECR repository, S3 bucket for Terraform state, and DynamoDB table for state locking.
+Make sure to disable/comment the s3 backend at terraform/global/terraform.tf as there is no existing bucket yet. This will be enabled later.
 
 ```bash
 cd terraform/global
@@ -92,7 +95,8 @@ terraform output
 After this step, you'll have:
 - ECR repository: `<account-id>.dkr.ecr.us-west-2.amazonaws.com/nzambe-ecr-repo`
 - S3 bucket: `nzambe-terraform-state`
-- DynamoDB table: `nzambe-terraform-locks`
+
+The following steps up to step 4 (included) can be performed automatically through the CI/CD pipeline by updating a .py file to trigger everything.
 
 ### Step 2: Push Docker Image to ECR
 
@@ -146,9 +150,7 @@ terraform apply
 terraform output alb_url
 ```
 
-Access your application at the ALB URL output: `http://<alb-dns-name>`
-
-### Step 5: (Optional) Enable Remote State Backend
+### Step 5: Enable Remote State Backend
 
 After the S3 bucket is created in Step 1, you can migrate to remote state storage:
 
@@ -158,25 +160,7 @@ After the S3 bucket is created in Step 1, you can migrate to remote state storag
 terraform init -migrate-state
 ```
 
-### Step 6: Deploy Production Environment
-
-```bash
-cd terraform/envs/prod
-
-# Initialize Terraform
-terraform init
-
-# Review the plan
-terraform plan
-
-# Apply the configuration
-terraform apply
-
-# Get the ALB URL
-terraform output alb_url
-```
-
-## Updating the Application
+## Manually (skipping the ci/cd pipeline) Updating the Application
 
 To deploy a new version of your application:
 
@@ -203,25 +187,7 @@ To deploy a new version of your application:
    ```
 
 ## Monitoring and Logs
-
-### CloudWatch Logs
-View application logs:
-```bash
-# Staging
-aws logs tail /ecs/nzambe-staging --follow --region us-west-2
-
-# Production
-aws logs tail /ecs/nzambe-prod --follow --region us-west-2
-```
-
-### ECS Service Status
-```bash
-# Check service status
-aws ecs describe-services \
-  --cluster nzambe-staging-cluster \
-  --services nzambe-staging-service \
-  --region us-west-2
-```
+CloudWatch logs are enabled and be accessed from the aws console. ECS logs also.
 
 ### Health Check
 ```bash
@@ -261,25 +227,6 @@ curl http://<alb-dns-name>/health
 - Staging: ~$50-70
 - Production: ~$150-200 (depending on traffic and scaling)
 
-## Troubleshooting
-
-### Task fails to start
-1. Check CloudWatch logs for container errors
-2. Verify ECR image exists and is accessible
-3. Ensure secrets are properly configured
-4. Check task execution role permissions
-
-### Cannot access ALB
-1. Verify security group rules
-2. Check target group health checks
-3. Ensure tasks are running in private subnets
-4. Verify route tables and NAT Gateway
-
-### Out of memory errors
-1. Increase `task_memory` in variables.tf
-2. Monitor memory usage in CloudWatch
-3. Consider vertical scaling (larger tasks) or horizontal scaling (more tasks)
-
 ## Cleanup
 
 To destroy all resources:
@@ -298,9 +245,3 @@ terraform destroy
 ```
 
 **Note:** Delete all objects in S3 buckets before destroying, as buckets with objects cannot be deleted.
-
-## Additional Resources
-
-- [AWS ECS Fargate Documentation](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html)
-- [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
-- [FastAPI Deployment Best Practices](https://fastapi.tiangolo.com/deployment/)
