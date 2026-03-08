@@ -154,9 +154,102 @@ nzambe query -q "What happen to Jonah in one sentence?" --base-url <ALB_DNS_NAME
 
 **Note**: `<ALB_DNS_NAME>` can be retrieved from your Terraform outputs.
 
+## Evaluation Framework
+
+Nzambe includes a comprehensive evaluation framework to measure and improve RAG performance. The framework uses synthetic data generation and LLM-as-judge approaches to evaluate both retrieval quality and answer generation.
+
+### Components
+
+#### 1. Synthetic Question Generation
+
+The framework generates evaluation questions from document chunks using high-end LLMs, ensuring questions test the retrieval system's ability to find relevant contexts.
+
+**Key Features:**
+- Uses a powerful model to generate contextually relevant questions from document nodes
+- Prevents duplicate generation by tracking existing questions per node
+- Customizable prompt template (configured in `config/base.yaml`)
+- Incremental dataset updates to avoid regenerating questions
+
+**Usage:**
+
+```python
+from nzambe.helpers.eval import generate_new_questions_from_index
+
+# Generate new questions from your vector index
+qa_dataset = generate_new_questions_from_index(
+    ollama_model_name="qwen2.5:14b",           # High-quality model for generation
+    index_storage_dir=".debug/storage",         # Path to your vector index
+    num_questions_per_node=2,                   # Questions per document chunk
+    num_nodes_to_sample=50,                     # Number of chunks to sample
+    random_seed=42,                             # For reproducibility
+    questions_dataset_path=".debug/qa_dataset.json"  # Save/update dataset
+)
+```
+
+The generated dataset follows LlamaIndex's `EmbeddingQAFinetuneDataset` format and can be used for:
+- Embedding model evaluation and fine-tuning
+- Retrieval system benchmarking
+- Regression testing after system changes
+
+#### 2. Retrieval Quality Evaluation
+
+The evaluation framework assesses how well your chosen embedding model retrieves relevant contexts for generated questions. This helps you:
+- Select the optimal embedding model for your domain (sacred texts)
+- Tune retrieval parameters (similarity threshold, top-k)
+- Compare different retrieval strategies
+
+#### 3. LLM-as-Judge Metrics
+
+The framework uses LLMs to evaluate production traces from Langfuse, providing continuous quality monitoring.
+
+**Implemented Metrics:**
+
+- **Answer Relevancy**: Evaluates how well the generated answer addresses the user's query. Measures query/answer alignment without requiring ground truth.
+
+- **Faithfulness**: Measures whether the answer is grounded in the retrieved contexts. Detects hallucinations by checking if claims in the answer can be traced to the provided context.
+
+**Usage:**
+
+```python
+from nzambe.helpers.eval import run_nightly_benchmark
+
+# Evaluate recent production traces
+run_nightly_benchmark(
+    last_n_hours=24,        # Evaluation time window
+    num_traces_limit=100    # Number of traces to evaluate
+)
+```
+
+This function:
+1. Fetches traces from Langfuse (with input queries, retrieved contexts, and generated answers)
+2. Runs evaluation using RAGAS metrics with your configured LLM
+3. Pushes scores back to Langfuse for dashboard visualization
+4. Enables tracking quality trends over time
+
+**Configuration:**
+
+Evaluation settings are defined in your config files under the `eval` section:
+
+```yaml
+eval:
+  ollama_model: "qwen2.5:14b"
+  ollama_base_url: "http://localhost:11434"
+  embedding_model:
+    platform: "ollama"
+    name: "nomic-embed-text"
+  qa_generate_prompt: |
+    {{default_qa_generate_prompt}} Make sure the question(s) don't give a clue about the context...
+```
+### Implementation Files
+
+- Core evaluation logic: `src/nzambe/helpers/eval.py`
+- Test suite: `tests/helpers/test_eval.py`
+- Configuration: `config/base.yaml` (eval section)
+
 ## Next Steps
 
 - [ ] **Data Expansion**: Incorporate the Quran and Torah into the vector index.
 - [ ] **Retrieval Optimization**: Implement Reranking and BM25 hybrid search. Also include a SummaryIndex to improve robustness on queries spanning multiple books.
 - [ ] **Node Filtering**: Add metadata filtering to allow users to query specific books.
 - [ ] **Observability**: Deploy Langfuse in the cluster to track every interaction and ease RAG app evaluation.
+- [ ] **Evaluation**:  Make the evaluation process production-ready through automation
